@@ -1,0 +1,15 @@
+# 개인정보 포함 데이터 파일 — 절대 커밋하지 않음
+employees.json
+public/employees.json
+검진조회.html
+실습용.xlsx
+~$실습용.xlsx
+
+# 빌드 산출물
+node_modules/
+dist/
+
+# 기타
+*.tmp
+.DS_Store
+Thumbs.db
