@@ -1,4 +1,5 @@
 import type { CheckupEntry, CheckupStatus, Employee } from '../types/employee'
+import { deriveEmployee } from './deriveCheckups'
 
 function parseEntry(raw: string): CheckupEntry {
   const [value, status] = raw.split('|')
@@ -7,7 +8,7 @@ function parseEntry(raw: string): CheckupEntry {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseEmployee(raw: any): Employee {
-  return {
+  return deriveEmployee({
     no: raw['no'] ?? '',
     사번: raw['사번'] ?? '',
     부서: raw['부서'] ?? '',
@@ -49,5 +50,5 @@ export function parseEmployee(raw: any): Employee {
       배치후: parseEntry(raw['y27_배치후'] ?? '|empty'),
       정기특검: parseEntry(raw['y27_정기특검'] ?? '|empty'),
     },
-  }
+  })
 }

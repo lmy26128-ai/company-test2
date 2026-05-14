@@ -1,4 +1,4 @@
-export type CheckupStatus = 'completed' | 'scheduled' | 'overdue' | 'empty'
+export type CheckupStatus = 'completed' | 'scheduled' | 'overdue' | 'empty' | 'not_applicable'
 
 export interface CheckupEntry {
   value: string

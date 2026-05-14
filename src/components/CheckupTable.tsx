@@ -54,16 +54,17 @@ export function CheckupTable({ employee: e }: Props) {
           {CHECKUP_ITEMS.map(({ key, label }) => {
             const entry = yearData[key]
             const isTarget = getTarget(e, key)
+            const isNA = !isTarget || entry.status === 'not_applicable'
             return (
               <div
                 key={key}
                 className={`flex items-center justify-between py-2 px-3 rounded-lg ${
-                  !isTarget ? 'opacity-40' : 'bg-gray-50'
+                  isNA ? 'opacity-40' : 'bg-gray-50'
                 }`}
               >
                 <div>
                   <span className="text-sm font-medium text-gray-800">{label}</span>
-                  {!isTarget && (
+                  {isNA && (
                     <span className="ml-2 text-xs text-gray-400">(해당없음)</span>
                   )}
                 </div>
@@ -82,15 +83,19 @@ export function CheckupTable({ employee: e }: Props) {
           </span>
           <span className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block" />
-            예정
+            예정(자동)
           </span>
           <span className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
-            초과
+            기한초과
           </span>
           <span className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block" />
             미입력
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-gray-200 inline-block" />
+            해당없음
           </span>
         </div>
       </div>
@@ -100,6 +105,9 @@ export function CheckupTable({ employee: e }: Props) {
 
 function getTarget(e: Employee, key: keyof Employee['y24']): boolean {
   if (key === '보건증일검') return e.보건증대상 === 'O' || e.일반대상 === 'O'
-  if (key === '배치전' || key === '배치후' || key === '정기특검') return e.특수대상 === 'O'
+  // 특수대상: 비어있거나 'X'가 아니면 특수검진 대상 (유해인자 이름이 직접 기입된 경우 포함)
+  if (key === '배치전' || key === '배치후' || key === '정기특검') {
+    return e.특수대상 !== '' && e.특수대상 !== 'X'
+  }
   return true
 }

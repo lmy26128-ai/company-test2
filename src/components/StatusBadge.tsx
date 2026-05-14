@@ -9,6 +9,7 @@ const styles: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-800 border border-blue-300',
   overdue: 'bg-red-100 text-red-800 border border-red-300',
   empty: 'bg-gray-100 text-gray-400 border border-gray-200',
+  not_applicable: 'bg-gray-50 text-gray-300 border border-gray-100',
 }
 
 const labels: Record<string, string> = {
@@ -16,6 +17,7 @@ const labels: Record<string, string> = {
   scheduled: '예정',
   overdue: '초과',
   empty: '—',
+  not_applicable: '-',
 }
 
 export function StatusBadge({ entry }: Props) {
