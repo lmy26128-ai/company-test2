@@ -231,11 +231,52 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 .emp-tab.active .tab-count{background:var(--primary-bg);color:var(--primary)}
 .resigned-badge{background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 8px;font-size:.78rem;font-weight:700}
 
+/* ── 모바일 하단 네비게이션 ── */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);z-index:150;padding-bottom:env(safe-area-inset-bottom)}
+.mobile-nav-inner{display:flex;justify-content:space-around;padding:6px 0}
+.mnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--text-sub);font-size:.65rem;font-family:inherit;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:8px;min-width:60px;transition:.15s}
+.mnav-btn .mnav-icon{font-size:1.3rem;line-height:1}
+.mnav-btn.active{color:var(--primary)}
+.mnav-btn.active .mnav-icon{transform:scale(1.1)}
+
 @media(max-width:768px){
   .summary-grid{grid-template-columns:1fr 1fr}
   .gen-options{grid-template-columns:1fr}
   #header-nav{display:none}
+  #btn-upload-new{font-size:.75rem;padding:4px 8px}
+  #last-saved-tag{display:none!important}
   .search-bar{flex-direction:column}
+  .mobile-nav{display:block}
+
+  /* 페이지 컨테이너 하단 여백 (모바일 nav 높이만큼) */
+  .page.active > .container{padding-bottom:80px}
+
+  /* 테이블 → 카드형 변환 */
+  .emp-table thead{display:none}
+  .emp-table tbody tr{display:block;background:#fff;border-radius:10px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08);overflow:hidden}
+  .emp-table tbody td{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid #f3f4f6;font-size:.85rem}
+  .emp-table tbody td:last-child{border-bottom:none}
+  .emp-table tbody td::before{content:attr(data-label);font-size:.72rem;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:.3px;flex-shrink:0;margin-right:10px}
+  .emp-table-wrap{border:none;border-radius:0}
+  .emp-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .emp-tab{padding:10px 14px;white-space:nowrap}
+
+  /* 모달 모바일 최적화 */
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal{border-radius:20px 20px 0 0;max-height:92vh}
+  .info-grid{grid-template-columns:1fr 1fr}
+
+  /* 요약 카드 작게 */
+  .sc-value{font-size:1.5rem}
+  .summary-card{padding:14px 16px}
+
+  /* 토스트 위치 (하단 네비 위) */
+  .toast{bottom:76px}
+
+  /* 업로드 페이지 */
+  .upload-wrap{padding:16px}
+  .how-to-steps{gap:8px}
+  .how-step{padding:12px}
 }
 </style>
 </head>
@@ -571,6 +612,24 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 
 <div class="toast" id="toast"></div>
 
+<!-- 모바일 하단 네비게이션 -->
+<nav class="mobile-nav" id="mobile-nav" style="display:none">
+  <div class="mobile-nav-inner">
+    <button class="mnav-btn active" id="mnav-dashboard" onclick="showPage('dashboard')">
+      <span class="mnav-icon">📊</span>대시보드
+    </button>
+    <button class="mnav-btn" id="mnav-employees" onclick="showPage('employees')">
+      <span class="mnav-icon">👥</span>직원조회
+    </button>
+    <button class="mnav-btn" id="mnav-generate" onclick="showPage('generate')">
+      <span class="mnav-icon">⚡</span>자동생성
+    </button>
+    <button class="mnav-btn" id="mnav-report" onclick="showPage('report')">
+      <span class="mnav-icon">📋</span>리포트
+    </button>
+  </div>
+</nav>
+
 <script>
 // ══════════════════════════════════════════════════════════
 // 전역 상태
@@ -830,6 +889,7 @@ function clearSavedData() {
 // ══════════════════════════════════════════════════════════
 function initApp() {
   document.getElementById('app-header').style.display = 'flex';
+  document.getElementById('mobile-nav').style.display = 'block';
   document.getElementById('company-name-tag').textContent = G.companyName ? ' · ' + G.companyName : '';
   populateYearSelectors();
   populateDeptFilters();
@@ -845,6 +905,10 @@ function showPage(name) {
   const navBtns = document.querySelectorAll('.nav-btn');
   if (navMap[name] !== undefined) navBtns[navMap[name]]?.classList.add('active');
 
+  document.querySelectorAll('.mnav-btn').forEach(b => b.classList.remove('active'));
+  const mnavId = { dashboard:'mnav-dashboard', employees:'mnav-employees', generate:'mnav-generate', report:'mnav-report' }[name];
+  if (mnavId) document.getElementById(mnavId)?.classList.add('active');
+
   if (name === 'dashboard') renderDashboard();
   if (name === 'employees') renderEmployeeList();
   if (name === 'generate') renderGeneratePage();
@@ -856,6 +920,7 @@ function resetApp() {
   localStorage.removeItem(LS_KEY);
   G = { employees:[], companyName:'', currentSort:{key:null,asc:true}, generatedData:null, years:[] };
   document.getElementById('app-header').style.display = 'none';
+  document.getElementById('mobile-nav').style.display = 'none';
   document.getElementById('last-saved-tag').style.display = 'none';
   document.getElementById('file-input').value = '';
   document.getElementById('upload-error').style.display = 'none';
@@ -1168,14 +1233,14 @@ function renderEmployeeList() {
         ? `<span class="resigned-badge">📤 ${emp.resignDate||'날짜 미입력'}</span>`
         : `<span style="background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 8px;font-size:.78rem;font-weight:700">🏥 ${emp.leaveDate||'날짜 미입력'}</span>`;
       return `<tr onclick="openEmpModal('${clickId}')">
-        <td class="emp-id-cell">${emp.id||'—'}</td>
-        <td class="emp-name-cell">${emp.name}</td>
-        <td><span class="tag-dept">${emp.dept||'—'}</span></td>
-        <td>${emp.jobType||'—'}</td>
-        <td>${dateBadge}</td>
-        <td style="max-width:120px;font-size:.78rem">${hazardShort}</td>
-        <td>${lastEx.general||'—'}</td>
-        <td>${lastEx.periodic||'—'}</td>
+        <td class="emp-id-cell" data-label="사번">${emp.id||'—'}</td>
+        <td class="emp-name-cell" data-label="성명">${emp.name}</td>
+        <td data-label="부서"><span class="tag-dept">${emp.dept||'—'}</span></td>
+        <td data-label="직군">${emp.jobType||'—'}</td>
+        <td data-label="${isResigned?'퇴사일':'휴직일'}">${dateBadge}</td>
+        <td data-label="유해인자" style="max-width:120px;font-size:.78rem">${hazardShort}</td>
+        <td data-label="마지막 일반검진">${lastEx.general||'—'}</td>
+        <td data-label="마지막 정기특검">${lastEx.periodic||'—'}</td>
       </tr>`;
     }
 
@@ -1184,15 +1249,15 @@ function renderEmployeeList() {
     const pStatus = getExamStatus(ex.periodic);
     const overall = getEmpOverallStatus(emp);
     return `<tr onclick="openEmpModal('${clickId}')">
-      <td class="emp-id-cell">${emp.id||'—'}</td>
-      <td class="emp-name-cell">${emp.name}</td>
-      <td><span class="tag-dept">${emp.dept||'—'}</span></td>
-      <td>${emp.jobType||'—'}</td>
-      <td style="max-width:140px;font-size:.78rem">${hazardShort}</td>
-      <td>${cellDisplay(ex.general, gStatus)}</td>
-      <td>${cellDisplay(ex.periodic, pStatus)}</td>
-      <td>${emp.isNight ? '<span class="chip night">야간</span>' : '<span class="chip no">—</span>'}</td>
-      <td>${statusBadge(overall)}</td>
+      <td class="emp-id-cell" data-label="사번">${emp.id||'—'}</td>
+      <td class="emp-name-cell" data-label="성명">${emp.name}</td>
+      <td data-label="부서"><span class="tag-dept">${emp.dept||'—'}</span></td>
+      <td data-label="직군">${emp.jobType||'—'}</td>
+      <td data-label="유해인자" style="max-width:140px;font-size:.78rem">${hazardShort}</td>
+      <td data-label="일반검진">${cellDisplay(ex.general, gStatus)}</td>
+      <td data-label="정기특검">${cellDisplay(ex.periodic, pStatus)}</td>
+      <td data-label="야간">${emp.isNight ? '<span class="chip night">야간</span>' : '<span class="chip no">—</span>'}</td>
+      <td data-label="상태">${statusBadge(overall)}</td>
     </tr>`;
   }).join('');
 }
