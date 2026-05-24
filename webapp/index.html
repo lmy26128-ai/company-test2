@@ -213,6 +213,13 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 .form-label{display:block;font-size:.75rem;font-weight:600;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 .form-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.9rem;font-family:inherit;outline:none;transition:.2s;background:#fff}
 .form-input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(45,106,159,.1)}
+.emp-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)}
+.emp-tab{background:transparent;border:none;padding:10px 22px;font-size:.92rem;font-family:inherit;font-weight:600;color:var(--text-sub);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:.15s}
+.emp-tab:hover{color:var(--primary-light)}
+.emp-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-count{background:var(--border);color:var(--text-sub);border-radius:20px;padding:1px 8px;font-size:.75rem;font-weight:700;margin-left:6px}
+.emp-tab.active .tab-count{background:var(--primary-bg);color:var(--primary)}
+.resigned-badge{background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 8px;font-size:.78rem;font-weight:700}
 
 @media(max-width:768px){
   .summary-grid{grid-template-columns:1fr 1fr}
@@ -313,6 +320,11 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 <!-- 직원 조회 -->
 <div id="page-employees" class="page">
   <div class="container">
+    <!-- 현직 / 퇴사자 탭 -->
+    <div class="emp-tabs">
+      <button class="emp-tab active" id="tab-active" onclick="switchEmpTab('active')">현직자 <span class="tab-count" id="tab-count-active"></span></button>
+      <button class="emp-tab" id="tab-resigned" onclick="switchEmpTab('resigned')">퇴사자 <span class="tab-count" id="tab-count-resigned"></span></button>
+    </div>
     <div class="search-bar">
       <input type="text" id="emp-search" placeholder="사번 또는 이름 검색..." oninput="renderEmployeeList()" autocomplete="off">
       <select id="filter-dept" onchange="renderEmployeeList()"><option value="">전체 부서</option></select>
@@ -328,14 +340,14 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
         <option value="periodic">정기특검</option>
         <option value="healthcert">보건증</option>
       </select>
-      <button class="btn-primary" onclick="openEmpForm()">＋ 직원 추가</button>
+      <button class="btn-primary" id="btn-add-emp" onclick="openEmpForm()">＋ 직원 추가</button>
       <button class="btn-outline" onclick="exportEmployeeList()">📥 Excel 내보내기</button>
     </div>
     <div class="result-count" id="emp-result-count"></div>
     <div class="emp-table-wrap">
       <table class="emp-table">
         <thead>
-          <tr>
+          <tr id="emp-thead-row">
             <th onclick="sortBy('id')">사번 ↕</th>
             <th onclick="sortBy('name')">성명 ↕</th>
             <th>부서</th>
@@ -421,7 +433,8 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
     <div class="modal-body" id="modal-body"></div>
     <div style="padding:12px 24px 20px;display:flex;gap:10px;border-top:1px solid var(--border)">
       <button class="btn-primary" id="modal-edit-btn" onclick="openEmpFormEdit()">✏️ 수정</button>
-      <button class="btn-outline" style="color:var(--danger);border-color:var(--danger)" id="modal-del-btn" onclick="deleteEmployee()">🗑 삭제</button>
+      <button class="btn-outline" style="color:var(--danger);border-color:var(--danger)" id="modal-resign-btn" onclick="resignEmployee()">📤 퇴사 처리</button>
+      <button class="btn-outline" id="modal-reinstate-btn" style="display:none" onclick="reinstateEmployee()">🔄 복직 처리</button>
     </div>
   </div>
 </div>
@@ -846,15 +859,16 @@ function renderDashboard() {
   const latestYear = G.years[G.years.length - 1];
   let overdue = 0, upcoming = 0, done = 0;
   const urgentList = [];
+  const activeEmployees = G.employees.filter(e => e.status !== 'resigned');
 
-  G.employees.forEach(emp => {
+  activeEmployees.forEach(emp => {
     const status = getEmpOverallStatus(emp);
     if (status === 'overdue') { overdue++; urgentList.push({emp, status}); }
     else if (status === 'upcoming') { upcoming++; urgentList.push({emp, status}); }
     else if (status === 'done') done++;
   });
 
-  const total = G.employees.length;
+  const total = activeEmployees.length;
   const rate = total ? Math.round((done / total) * 100) : 0;
 
   document.getElementById('sc-total').textContent = total;
@@ -915,7 +929,7 @@ function renderDashboard() {
 
 function renderDeptChart() {
   const depts = {};
-  G.employees.forEach(emp => {
+  G.employees.filter(e => e.status !== 'resigned').forEach(emp => {
     const d = emp.dept || '미분류';
     if (!depts[d]) depts[d] = { total: 0, done: 0 };
     depts[d].total++;
@@ -939,6 +953,37 @@ function renderDeptChart() {
 // 직원 조회
 // ══════════════════════════════════════════════════════════
 let sortKey = null, sortAsc = true;
+let currentEmpTab = 'active';
+
+function switchEmpTab(tab) {
+  currentEmpTab = tab;
+  document.getElementById('tab-active').classList.toggle('active', tab === 'active');
+  document.getElementById('tab-resigned').classList.toggle('active', tab === 'resigned');
+  document.getElementById('btn-add-emp').style.display = tab === 'active' ? '' : 'none';
+  document.getElementById('filter-status').style.display = tab === 'active' ? '' : 'none';
+
+  // 퇴사자 탭이면 헤더에 퇴사일 컬럼 추가
+  const thead = document.getElementById('emp-thead-row');
+  if (tab === 'resigned') {
+    thead.innerHTML = `
+      <th onclick="sortBy('id')">사번 ↕</th>
+      <th onclick="sortBy('name')">성명 ↕</th>
+      <th>부서</th><th>직군</th>
+      <th onclick="sortBy('resignDate')">퇴사일 ↕</th>
+      <th>유해인자</th>
+      <th>마지막 일반검진</th><th>마지막 정기특검</th>`;
+  } else {
+    thead.innerHTML = `
+      <th onclick="sortBy('id')">사번 ↕</th>
+      <th onclick="sortBy('name')">성명 ↕</th>
+      <th>부서</th><th>직군</th>
+      <th>유해인자</th>
+      <th onclick="sortBy('general')">일반검진 ↕</th>
+      <th onclick="sortBy('periodic')">정기특검 ↕</th>
+      <th>야간</th><th>상태</th>`;
+  }
+  renderEmployeeList();
+}
 
 function sortBy(key) {
   if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
@@ -950,15 +995,25 @@ function filterStatus(status) {
   renderEmployeeList();
 }
 
+function updateTabCounts() {
+  const active   = G.employees.filter(e => e.status !== 'resigned').length;
+  const resigned = G.employees.filter(e => e.status === 'resigned').length;
+  document.getElementById('tab-count-active').textContent   = active;
+  document.getElementById('tab-count-resigned').textContent = resigned;
+}
+
 function renderEmployeeList() {
-  const q = document.getElementById('emp-search').value.toLowerCase();
-  const dept = document.getElementById('filter-dept').value;
+  updateTabCounts();
+  const q      = document.getElementById('emp-search').value.toLowerCase();
+  const dept   = document.getElementById('filter-dept').value;
   const status = document.getElementById('filter-status').value;
+  const isResigned = currentEmpTab === 'resigned';
 
   let list = G.employees.filter(emp => {
-    if (q && !emp.name.toLowerCase().includes(q) && !emp.id.toLowerCase().includes(q)) return false;
+    if (isResigned ? emp.status !== 'resigned' : emp.status === 'resigned') return false;
+    if (q && !emp.name.toLowerCase().includes(q) && !(emp.id||'').toLowerCase().includes(q)) return false;
     if (dept && emp.dept !== dept) return false;
-    if (status) {
+    if (!isResigned && status) {
       const s = getEmpOverallStatus(emp);
       if (status === 'urgent' && s !== 'overdue' && s !== 'upcoming') return false;
       if (status !== 'urgent' && s !== status) return false;
@@ -968,34 +1023,57 @@ function renderEmployeeList() {
 
   if (sortKey) {
     list = list.slice().sort((a, b) => {
-      let va = sortKey === 'name' ? a.name : sortKey === 'id' ? a.id :
-               a.exams[G.years[G.years.length-1]]?.[sortKey] || '';
-      let vb = sortKey === 'name' ? b.name : sortKey === 'id' ? b.id :
-               b.exams[G.years[G.years.length-1]]?.[sortKey] || '';
+      let va = sortKey === 'name' ? a.name
+             : sortKey === 'id'   ? (a.id||'')
+             : sortKey === 'resignDate' ? (a.resignDate||'')
+             : a.exams[G.years[G.years.length-1]]?.[sortKey] || '';
+      let vb = sortKey === 'name' ? b.name
+             : sortKey === 'id'   ? (b.id||'')
+             : sortKey === 'resignDate' ? (b.resignDate||'')
+             : b.exams[G.years[G.years.length-1]]?.[sortKey] || '';
       return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     });
   }
 
-  document.getElementById('emp-result-count').textContent = `${list.length}명 표시 중 (전체 ${G.employees.length}명)`;
+  const activeTotal   = G.employees.filter(e => e.status !== 'resigned').length;
+  const resignedTotal = G.employees.filter(e => e.status === 'resigned').length;
+  document.getElementById('emp-result-count').textContent =
+    `${list.length}명 표시 중 (${isResigned ? '퇴사자 전체 ' + resignedTotal : '현직 전체 ' + activeTotal}명)`;
 
   const latestYear = G.years[G.years.length - 1];
   const tbody = document.getElementById('emp-tbody');
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-sub)">검색 결과가 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-sub)">${isResigned ? '퇴사 처리된 직원이 없습니다.' : '검색 결과가 없습니다.'}</td></tr>`;
     return;
   }
 
   tbody.innerHTML = list.map(emp => {
+    const hazardShort = emp.hazards ? emp.hazards.split(',').slice(0,2).join(', ') + (emp.hazards.split(',').length > 2 ? ' 외' : '') : '—';
+    const clickId = (emp.id || emp.name).replace(/'/g, "\\'");
+
+    if (isResigned) {
+      const lastEx = [...G.years].reverse().map(y => emp.exams?.[y]).find(e => e?.general || e?.periodic) || {};
+      return `<tr onclick="openEmpModal('${clickId}')">
+        <td class="emp-id-cell">${emp.id||'—'}</td>
+        <td class="emp-name-cell">${emp.name}</td>
+        <td><span class="tag-dept">${emp.dept||'—'}</span></td>
+        <td>${emp.jobType||'—'}</td>
+        <td><span class="resigned-badge">📤 ${emp.resignDate||'날짜 미상'}</span></td>
+        <td style="max-width:120px;font-size:.78rem">${hazardShort}</td>
+        <td>${lastEx.general||'—'}</td>
+        <td>${lastEx.periodic||'—'}</td>
+      </tr>`;
+    }
+
     const ex = emp.exams[latestYear] || {};
     const gStatus = getExamStatus(ex.general);
     const pStatus = getExamStatus(ex.periodic);
     const overall = getEmpOverallStatus(emp);
-    const hazardShort = emp.hazards ? emp.hazards.split(',').slice(0,2).join(', ') + (emp.hazards.split(',').length > 2 ? ' 외' : '') : '—';
-    return `<tr onclick="openEmpModal('${emp.id}')">
-      <td class="emp-id-cell">${emp.id || '—'}</td>
+    return `<tr onclick="openEmpModal('${clickId}')">
+      <td class="emp-id-cell">${emp.id||'—'}</td>
       <td class="emp-name-cell">${emp.name}</td>
-      <td><span class="tag-dept">${emp.dept || '—'}</span></td>
-      <td>${emp.jobType || '—'}</td>
+      <td><span class="tag-dept">${emp.dept||'—'}</span></td>
+      <td>${emp.jobType||'—'}</td>
       <td style="max-width:140px;font-size:.78rem">${hazardShort}</td>
       <td>${cellDisplay(ex.general, gStatus)}</td>
       <td>${cellDisplay(ex.periodic, pStatus)}</td>
@@ -1017,12 +1095,18 @@ function cellDisplay(ym, status) {
 // 직원 상세 모달
 // ══════════════════════════════════════════════════════════
 function openEmpModal(id) {
-  const emp = G.employees.find(e => e.id === id);
+  const emp = G.employees.find(e => e.id === id || e.name === id);
   if (!emp) return;
   _editingId = emp.id || emp.name;
 
-  document.getElementById('modal-name').textContent = emp.name;
-  document.getElementById('modal-meta').textContent = `${emp.dept} · ${emp.jobType} · ${emp.jobTask || ''}`;
+  // 퇴사자 여부에 따라 버튼 전환
+  const isResigned = emp.status === 'resigned';
+  document.getElementById('modal-resign-btn').style.display    = isResigned ? 'none' : '';
+  document.getElementById('modal-reinstate-btn').style.display = isResigned ? '' : 'none';
+  document.getElementById('modal-edit-btn').style.display      = isResigned ? 'none' : '';
+
+  document.getElementById('modal-name').textContent = emp.name + (isResigned ? ' (퇴사)' : '');
+  document.getElementById('modal-meta').textContent = `${emp.dept} · ${emp.jobType} · ${emp.jobTask || ''}` + (isResigned ? ` · 퇴사일: ${emp.resignDate||'미상'}` : '');
 
   const hazardHtml = emp.hazards
     ? emp.hazards.split(',').map(h => `<span class="hazard-tag">${h.trim()}</span>`).join('')
@@ -1172,14 +1256,31 @@ function saveEmpForm() {
   showToast(_editingId ? '직원 정보가 수정되었습니다.' : '직원이 추가되었습니다.');
 }
 
-function deleteEmployee() {
+function resignEmployee() {
   const name = document.getElementById('modal-name').textContent;
-  if (!confirm(`${name} 직원을 삭제할까요?`)) return;
-  G.employees = G.employees.filter(e => e.name !== name && e.id !== _editingId);
+  const dateInput = prompt(`${name} 직원을 퇴사 처리합니다.\n퇴사일을 입력하세요 (예: 2026-05-24)`, new Date().toISOString().slice(0,10));
+  if (dateInput === null) return;
+  const emp = G.employees.find(e => e.id === _editingId || e.name === name);
+  if (!emp) return;
+  emp.status = 'resigned';
+  emp.resignDate = dateInput || new Date().toISOString().slice(0,10);
   saveToLocal();
   closeEmpModal();
   renderEmployeeList();
-  showToast('직원이 삭제되었습니다.');
+  showToast(`${name} 직원이 퇴사 처리되었습니다.`);
+}
+
+function reinstateEmployee() {
+  const name = document.getElementById('modal-name').textContent;
+  if (!confirm(`${name} 직원을 복직 처리할까요?`)) return;
+  const emp = G.employees.find(e => e.id === _editingId || e.name === name);
+  if (!emp) return;
+  emp.status = 'active';
+  emp.resignDate = '';
+  saveToLocal();
+  closeEmpModal();
+  renderEmployeeList();
+  showToast(`${name} 직원이 복직 처리되었습니다.`);
 }
 
 // ══════════════════════════════════════════════════════════
