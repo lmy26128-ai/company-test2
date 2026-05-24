@@ -43,7 +43,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 .upload-wrap p{color:var(--text-sub);font-size:.95rem;margin-bottom:32px;line-height:1.6}
 .drop-zone{border:2.5px dashed #93c5fd;border-radius:16px;padding:48px 32px;background:#fff;cursor:pointer;transition:.2s;position:relative}
 .drop-zone:hover,.drop-zone.drag{border-color:var(--primary-light);background:#eff6ff}
-.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;pointer-events:none}
 .drop-zone .dz-icon{font-size:2.5rem;margin-bottom:12px}
 .drop-zone .dz-text{font-size:1rem;font-weight:600;color:var(--primary);margin-bottom:6px}
 .drop-zone .dz-sub{font-size:.8rem;color:var(--text-sub)}
@@ -430,11 +430,13 @@ const CUR_YEAR = TODAY.getFullYear() % 100;
 // 파일 업로드 & 파싱
 // ══════════════════════════════════════════════════════════
 const dropZone = document.getElementById('drop-zone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('dragenter', e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', e => { e.preventDefault(); e.stopPropagation(); if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag'); });
 dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.classList.remove('drag');
-  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+  e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
 });
 
 function handleFileSelect(e) { if (e.target.files[0]) processFile(e.target.files[0]); }
