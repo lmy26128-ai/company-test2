@@ -210,6 +210,9 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 .text-success{color:var(--success)}
 .toast{position:fixed;bottom:28px;right:28px;background:#1f2937;color:#fff;padding:12px 20px;border-radius:10px;font-size:.88rem;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:999;transform:translateY(20px);opacity:0;transition:.25s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
+.form-label{display:block;font-size:.75rem;font-weight:600;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.9rem;font-family:inherit;outline:none;transition:.2s;background:#fff}
+.form-input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(45,106,159,.1)}
 
 @media(max-width:768px){
   .summary-grid{grid-template-columns:1fr 1fr}
@@ -231,6 +234,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
     <button class="nav-btn" onclick="showPage('report')">리포트</button>
   </nav>
   <div id="header-actions">
+    <span id="last-saved-tag" style="font-size:.75rem;opacity:.7;display:none"></span>
     <button id="btn-upload-new" onclick="resetApp()">📂 파일 교체</button>
   </div>
 </header>
@@ -241,13 +245,21 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
     <div class="upload-icon">🏥</div>
     <h2>건강검진 관리 시스템</h2>
     <p>산업안전보건법 기반 건강검진 일정을<br>자동으로 관리하세요.</p>
+    <div id="saved-data-banner" style="display:none;margin-bottom:20px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:18px 20px;text-align:left">
+      <div style="font-weight:700;color:var(--primary);margin-bottom:6px">💾 저장된 데이터가 있습니다</div>
+      <div id="saved-data-info" style="font-size:.85rem;color:var(--text-sub);margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-primary" onclick="loadFromLocal()">이어서 사용하기</button>
+        <button class="btn-outline" onclick="clearSavedData()">삭제하고 새로 시작</button>
+      </div>
+    </div>
     <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
       <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)">
       <div class="dz-icon">📂</div>
       <div class="dz-text">Excel 파일을 여기에 끌어다 놓거나 클릭하세요</div>
       <div class="dz-sub">.xlsx / .xls / .csv 지원</div>
     </div>
-    <div class="privacy-note">🔒 모든 데이터는 내 브라우저에서만 처리됩니다. 서버로 전송되지 않습니다.</div>
+    <div class="privacy-note">🔒 모든 데이터는 이 브라우저에만 저장됩니다. 서버로 전송되지 않습니다.</div>
     <button class="sample-btn" onclick="loadSampleData()">샘플 데이터로 먼저 체험해보기</button>
     <div id="upload-error" style="margin-top:14px;color:var(--danger);font-size:.85rem;display:none"></div>
     <div id="col-mapper" style="display:none;margin-top:24px"></div>
@@ -316,6 +328,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
         <option value="periodic">정기특검</option>
         <option value="healthcert">보건증</option>
       </select>
+      <button class="btn-primary" onclick="openEmpForm()">＋ 직원 추가</button>
       <button class="btn-outline" onclick="exportEmployeeList()">📥 Excel 내보내기</button>
     </div>
     <div class="result-count" id="emp-result-count"></div>
@@ -406,6 +419,45 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <button class="modal-close" onclick="closeEmpModal()">✕</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
+    <div style="padding:12px 24px 20px;display:flex;gap:10px;border-top:1px solid var(--border)">
+      <button class="btn-primary" id="modal-edit-btn" onclick="openEmpFormEdit()">✏️ 수정</button>
+      <button class="btn-outline" style="color:var(--danger);border-color:var(--danger)" id="modal-del-btn" onclick="deleteEmployee()">🗑 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 직원 추가/수정 폼 모달 -->
+<div class="modal-overlay" id="emp-form-modal" onclick="closeFormModal(event)">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <div><div class="emp-name" id="form-modal-title">직원 추가</div></div>
+      <button class="modal-close" onclick="document.getElementById('emp-form-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="emp-form-fields">
+        <div><label class="form-label">사번</label><input class="form-input" id="f-id" placeholder="예) E001"></div>
+        <div><label class="form-label">성명 *</label><input class="form-input" id="f-name" placeholder="홍길동"></div>
+        <div><label class="form-label">부서</label><input class="form-input" id="f-dept" placeholder="생산1파트"></div>
+        <div><label class="form-label">직군</label><input class="form-input" id="f-jobtype" placeholder="생산기술직"></div>
+        <div><label class="form-label">직무</label><input class="form-input" id="f-jobtask" placeholder=""></div>
+        <div><label class="form-label">성별</label>
+          <select class="form-input" id="f-gender"><option value="">선택</option><option>남</option><option>여</option></select></div>
+        <div><label class="form-label">입사일</label><input class="form-input" id="f-hiredate" placeholder="2024-01-01"></div>
+        <div><label class="form-label">야간근무</label>
+          <select class="form-input" id="f-night"><option value="N">아니오</option><option value="Y">예</option></select></div>
+        <div><label class="form-label">일반검진 대상</label>
+          <select class="form-input" id="f-general"><option value="Y">예</option><option value="N">아��오</option></select></div>
+        <div><label class="form-label">보건증 필요</label>
+          <select class="form-input" id="f-healthcert"><option value="N">아니오</option><option value="Y">예</option></select></div>
+        <div style="grid-column:1/-1"><label class="form-label">특수항목</label><input class="form-input" id="f-special" placeholder="소음, 용접 (없으면 X)"></div>
+        <div style="grid-column:1/-1"><label class="form-label">유해인자</label><input class="form-input" id="f-hazard" placeholder="야간, 소음, 용접흄"></div>
+      </div>
+      <div style="margin-top:18px" id="exam-form-area"></div>
+    </div>
+    <div style="padding:12px 24px 20px;display:flex;gap:10px;border-top:1px solid var(--border)">
+      <button class="btn-primary" onclick="saveEmpForm()">저장</button>
+      <button class="btn-outline" onclick="document.getElementById('emp-form-modal').classList.remove('open')">취소</button>
+    </div>
   </div>
 </div>
 
@@ -616,13 +668,64 @@ function showError(msg) {
 }
 
 // ══════════════════════════════════════════════════════════
+// LocalStorage 저장/불러오기
+// ══════════════════════════════════════════════════════════
+const LS_KEY = 'hcm_data';
+
+function saveToLocal() {
+  const payload = {
+    companyName: G.companyName,
+    employees:   G.employees,
+    years:       G.years,
+    savedAt:     new Date().toISOString().slice(0, 10)
+  };
+  localStorage.setItem(LS_KEY, JSON.stringify(payload));
+  const tag = document.getElementById('last-saved-tag');
+  tag.textContent = '저장됨 ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+  tag.style.display = 'inline';
+}
+
+function loadFromLocal() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return false;
+  try {
+    const d = JSON.parse(raw);
+    G.employees   = d.employees   || [];
+    G.companyName = d.companyName || '';
+    G.years       = d.years       || [];
+    initApp();
+    return true;
+  } catch { return false; }
+}
+
+function checkSavedData() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    const banner = document.getElementById('saved-data-banner');
+    const info   = document.getElementById('saved-data-info');
+    banner.style.display = 'block';
+    info.textContent = `${d.companyName || '저장된 사업장'} · ${(d.employees||[]).length}명 · ${d.savedAt || ''} 저장`;
+  } catch {}
+}
+
+function clearSavedData() {
+  if (!confirm('저장된 데이터를 삭제할까요?')) return;
+  localStorage.removeItem(LS_KEY);
+  document.getElementById('saved-data-banner').style.display = 'none';
+  showToast('데이터가 삭제되었습니다.');
+}
+
+// ══════════════════════════════════════════════════════════
 // 앱 초기화 & 페이지 라우팅
 // ══════════════════════════════════════════════════════════
 function initApp() {
   document.getElementById('app-header').style.display = 'flex';
-  document.getElementById('company-name-tag').textContent = G.companyName;
+  document.getElementById('company-name-tag').textContent = G.companyName ? ' · ' + G.companyName : '';
   populateYearSelectors();
   populateDeptFilters();
+  saveToLocal();
   showPage('dashboard');
 }
 
@@ -641,10 +744,14 @@ function showPage(name) {
 }
 
 function resetApp() {
+  if (G.employees.length && !confirm('현재 데이터를 닫고 새 파일로 교체할까요?\n저장된 브라우저 데이터도 삭제됩니다.')) return;
+  localStorage.removeItem(LS_KEY);
   G = { employees:[], companyName:'', currentSort:{key:null,asc:true}, generatedData:null, years:[] };
   document.getElementById('app-header').style.display = 'none';
+  document.getElementById('last-saved-tag').style.display = 'none';
   document.getElementById('file-input').value = '';
   document.getElementById('upload-error').style.display = 'none';
+  checkSavedData();
   showPageDirect('upload');
 }
 
@@ -912,6 +1019,7 @@ function cellDisplay(ym, status) {
 function openEmpModal(id) {
   const emp = G.employees.find(e => e.id === id);
   if (!emp) return;
+  _editingId = emp.id || emp.name;
 
   document.getElementById('modal-name').textContent = emp.name;
   document.getElementById('modal-meta').textContent = `${emp.dept} · ${emp.jobType} · ${emp.jobTask || ''}`;
@@ -958,6 +1066,121 @@ function openEmpModal(id) {
 
 function closeModal(e) { if (e.target.id === 'emp-modal') closeEmpModal(); }
 function closeEmpModal() { document.getElementById('emp-modal').classList.remove('open'); }
+function closeFormModal(e) { if (e.target.id === 'emp-form-modal') document.getElementById('emp-form-modal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════════════════
+// 직원 추가 / 수정 / 삭제
+// ══════════════════════════════════════════════════════════
+let _editingId = null;
+
+function openEmpForm() {
+  _editingId = null;
+  document.getElementById('form-modal-title').textContent = '직원 추가';
+  ['id','name','dept','jobtype','jobtask','hiredate','special','hazard'].forEach(f => document.getElementById('f-'+f).value = '');
+  document.getElementById('f-gender').value    = '';
+  document.getElementById('f-night').value     = 'N';
+  document.getElementById('f-general').value   = 'Y';
+  document.getElementById('f-healthcert').value = 'N';
+  buildExamFormFields(null);
+  document.getElementById('emp-form-modal').classList.add('open');
+}
+
+function openEmpFormEdit() {
+  const emp = G.employees.find(e => e.id === _editingId || e.name === document.getElementById('modal-name').textContent);
+  if (!emp) return;
+  _editingId = emp.id || emp.name;
+  document.getElementById('form-modal-title').textContent = '직원 수정';
+  document.getElementById('f-id').value        = emp.id        || '';
+  document.getElementById('f-name').value      = emp.name      || '';
+  document.getElementById('f-dept').value      = emp.dept      || '';
+  document.getElementById('f-jobtype').value   = emp.jobType   || '';
+  document.getElementById('f-jobtask').value   = emp.jobTask   || '';
+  document.getElementById('f-gender').value    = emp.gender    || '';
+  document.getElementById('f-hiredate').value  = emp.hireDate  || '';
+  document.getElementById('f-night').value     = emp.isNight       ? 'Y' : 'N';
+  document.getElementById('f-general').value   = emp.generalTarget ? 'Y' : 'N';
+  document.getElementById('f-healthcert').value = emp.healthCert   ? 'Y' : 'N';
+  document.getElementById('f-special').value   = emp.specialItems  || '';
+  document.getElementById('f-hazard').value    = emp.hazards        || '';
+  buildExamFormFields(emp);
+  closeEmpModal();
+  document.getElementById('emp-form-modal').classList.add('open');
+}
+
+function buildExamFormFields(emp) {
+  const years = G.years.length ? G.years : [];
+  if (years.length === 0) { document.getElementById('exam-form-area').innerHTML = ''; return; }
+  const rows = years.map(yr => {
+    const ex = emp?.exams?.[yr] || {};
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:.78rem;font-weight:700;color:var(--primary);margin-bottom:8px;text-transform:uppercase">
+        <span style="background:var(--primary);color:#fff;border-radius:4px;padding:2px 8px">${yr}년</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <div><label class="form-label">일반검진</label><input class="form-input" id="fe-${yr}-general" value="${ex.general||''}" placeholder="YY.MM"></div>
+        <div><label class="form-label">배치전</label><input class="form-input" id="fe-${yr}-pre" value="${ex.prePlacement||''}" placeholder="YY.MM"></div>
+        <div><label class="form-label">배치후</label><input class="form-input" id="fe-${yr}-post" value="${ex.postPlacement||''}" placeholder="YY.MM"></div>
+        <div><label class="form-label">정기특검</label><input class="form-input" id="fe-${yr}-periodic" value="${ex.periodic||''}" placeholder="YY.MM"></div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('exam-form-area').innerHTML =
+    `<div class="modal-section-title" style="margin-bottom:12px">연도별 검진 날짜</div>${rows}`;
+}
+
+function saveEmpForm() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('성명은 필수입니다.'); return; }
+
+  const exams = {};
+  G.years.forEach(yr => {
+    exams[yr] = {
+      general:       document.getElementById(`fe-${yr}-general`)?.value.trim()  || '',
+      prePlacement:  document.getElementById(`fe-${yr}-pre`)?.value.trim()      || '',
+      postPlacement: document.getElementById(`fe-${yr}-post`)?.value.trim()     || '',
+      periodic:      document.getElementById(`fe-${yr}-periodic`)?.value.trim() || ''
+    };
+  });
+
+  const updated = {
+    id:            document.getElementById('f-id').value.trim(),
+    name,
+    dept:          document.getElementById('f-dept').value.trim(),
+    jobType:       document.getElementById('f-jobtype').value.trim(),
+    jobTask:       document.getElementById('f-jobtask').value.trim(),
+    gender:        document.getElementById('f-gender').value,
+    hireDate:      document.getElementById('f-hiredate').value.trim(),
+    isNight:       document.getElementById('f-night').value === 'Y',
+    generalTarget: document.getElementById('f-general').value === 'Y',
+    healthCert:    document.getElementById('f-healthcert').value === 'Y',
+    specialItems:  document.getElementById('f-special').value.trim(),
+    hazards:       document.getElementById('f-hazard').value.trim(),
+    exams
+  };
+
+  if (_editingId) {
+    const idx = G.employees.findIndex(e => e.id === _editingId || e.name === _editingId);
+    if (idx >= 0) G.employees[idx] = updated;
+  } else {
+    G.employees.push(updated);
+  }
+
+  saveToLocal();
+  document.getElementById('emp-form-modal').classList.remove('open');
+  renderEmployeeList();
+  if (showPage) showPage('employees');
+  showToast(_editingId ? '직원 정보가 수정되었습니다.' : '직원이 추가되었습니다.');
+}
+
+function deleteEmployee() {
+  const name = document.getElementById('modal-name').textContent;
+  if (!confirm(`${name} 직원을 삭제할까요?`)) return;
+  G.employees = G.employees.filter(e => e.name !== name && e.id !== _editingId);
+  saveToLocal();
+  closeEmpModal();
+  renderEmployeeList();
+  showToast('직원이 삭제되었습니다.');
+}
 
 // ══════════════════════════════════════════════════════════
 // 일정 자동생성
@@ -1248,6 +1471,9 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
 }
+
+// 앱 시작 시 저장 데이터 확인
+checkSavedData();
 </script>
 </body>
 </html>
