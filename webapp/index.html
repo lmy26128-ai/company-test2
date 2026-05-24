@@ -213,6 +213,9 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 .form-label{display:block;font-size:.75rem;font-weight:600;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 .form-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.9rem;font-family:inherit;outline:none;transition:.2s;background:#fff}
 .form-input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(45,106,159,.1)}
+.ee-type-btn{display:flex;align-items:center;justify-content:center;padding:10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text-sub);transition:.15s;user-select:none}
+.ee-type-btn:hover{border-color:var(--primary-light);color:var(--primary-light)}
+.ee-type-btn.selected{border-color:var(--primary-light);background:var(--primary-bg);color:var(--primary)}
 .emp-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)}
 .emp-tab{background:transparent;border:none;padding:10px 22px;font-size:.92rem;font-family:inherit;font-weight:600;color:var(--text-sub);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:.15s}
 .emp-tab:hover{color:var(--primary-light)}
@@ -433,10 +436,58 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div style="padding:12px 24px 20px;display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border)">
-      <button class="btn-primary"  id="modal-edit-btn"      onclick="openEmpFormEdit()">✏️ 수정</button>
+      <button class="btn-primary"  id="modal-exam-btn"      onclick="openExamEntry()">✅ 수검 완료 입력</button>
+      <button class="btn-outline"  id="modal-edit-btn"      onclick="openEmpFormEdit()">✏️ 기본정보 수정</button>
       <button class="btn-outline"  id="modal-leave-btn"     style="color:var(--warn);border-color:var(--warn)" onclick="leaveEmployee()">🏥 휴직 처리</button>
       <button class="btn-outline"  id="modal-resign-btn"    style="color:var(--danger);border-color:var(--danger)" onclick="resignEmployee()">📤 퇴사 처리</button>
       <button class="btn-outline"  id="modal-reinstate-btn" style="display:none" onclick="reinstateEmployee()">🔄 복직 처리</button>
+    </div>
+  </div>
+</div>
+
+<!-- 수검 완료 입력 모달 -->
+<div class="modal-overlay" id="exam-entry-modal" onclick="if(event.target.id==='exam-entry-modal')closeExamEntry()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div><div class="emp-name" id="exam-entry-title">수검 완료 입력</div></div>
+      <button class="modal-close" onclick="closeExamEntry()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <div style="margin-bottom:18px">
+        <label class="form-label">연도</label>
+        <select class="form-input" id="ee-year" style="width:100%"></select>
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="form-label">검진 종류</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px" id="ee-type-group">
+          <label class="ee-type-btn" onclick="selectExamType('general')">
+            <input type="radio" name="ee-type" value="general" style="display:none">
+            <span>일반검진</span>
+          </label>
+          <label class="ee-type-btn" onclick="selectExamType('periodic')">
+            <input type="radio" name="ee-type" value="periodic" style="display:none">
+            <span>정기특검</span>
+          </label>
+          <label class="ee-type-btn" onclick="selectExamType('prePlacement')">
+            <input type="radio" name="ee-type" value="prePlacement" style="display:none">
+            <span>배치전</span>
+          </label>
+          <label class="ee-type-btn" onclick="selectExamType('postPlacement')">
+            <input type="radio" name="ee-type" value="postPlacement" style="display:none">
+            <span>배치후</span>
+          </label>
+        </div>
+      </div>
+      <div style="margin-bottom:6px">
+        <label class="form-label">수검일</label>
+        <input class="form-input" id="ee-date" placeholder="예) 26.05" maxlength="5" style="font-size:1.1rem;font-weight:600;letter-spacing:1px">
+        <div style="font-size:.78rem;color:var(--text-sub);margin-top:5px">YY.MM 형식으로 입력 (예: 26.05 = 2026년 5월)</div>
+        <div id="ee-error" style="font-size:.82rem;color:var(--danger);margin-top:6px;display:none"></div>
+      </div>
+    </div>
+    <div style="padding:12px 24px 20px;display:flex;gap:10px;border-top:1px solid var(--border)">
+      <button class="btn-primary" onclick="saveExamEntry()">저장</button>
+      <button class="btn-outline" onclick="closeExamEntry()">취소</button>
     </div>
   </div>
 </div>
@@ -1127,6 +1178,7 @@ function openEmpModal(id) {
   const isActive   = st === 'active';
   const isLeaveEmp = st === 'leave';
   const isResigned = st === 'resigned';
+  document.getElementById('modal-exam-btn').style.display      = isActive ? '' : 'none';
   document.getElementById('modal-edit-btn').style.display      = isActive ? '' : 'none';
   document.getElementById('modal-leave-btn').style.display     = isActive ? '' : 'none';
   document.getElementById('modal-resign-btn').style.display    = (isActive || isLeaveEmp) ? '' : 'none';
@@ -1180,6 +1232,83 @@ function openEmpModal(id) {
 function closeModal(e) { if (e.target.id === 'emp-modal') closeEmpModal(); }
 function closeEmpModal() { document.getElementById('emp-modal').classList.remove('open'); }
 function closeFormModal(e) { if (e.target.id === 'emp-form-modal') document.getElementById('emp-form-modal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════════════════
+// 수검 완료 입력
+// ══════════════════════════════════════════════════════════
+let _selectedExamType = null;
+
+function openExamEntry() {
+  _selectedExamType = null;
+
+  // 연도 셀렉트 채우기
+  const sel = document.getElementById('ee-year');
+  sel.innerHTML = G.years.map(y => `<option value="${y}">20${y}년</option>`).join('');
+  sel.value = G.years[G.years.length - 1] || '';
+
+  // 검진 종류 초기화
+  document.querySelectorAll('.ee-type-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('ee-date').value = '';
+  document.getElementById('ee-error').style.display = 'none';
+
+  // 현재 직원 이름 표시
+  const name = document.getElementById('modal-name').textContent.replace(' (퇴사)','').replace(' (휴직)','');
+  document.getElementById('exam-entry-title').textContent = `수검 완료 입력 — ${name}`;
+
+  document.getElementById('exam-entry-modal').classList.add('open');
+}
+
+function closeExamEntry() {
+  document.getElementById('exam-entry-modal').classList.remove('open');
+}
+
+function selectExamType(type) {
+  _selectedExamType = type;
+  document.querySelectorAll('.ee-type-btn').forEach(b => b.classList.remove('selected'));
+  const typeMap = { general:'일반검진', periodic:'정기특검', prePlacement:'배치전', postPlacement:'배치후' };
+  document.querySelectorAll('.ee-type-btn span').forEach(s => {
+    if (s.textContent === typeMap[type]) s.closest('.ee-type-btn').classList.add('selected');
+  });
+}
+
+function saveExamEntry() {
+  const errEl = document.getElementById('ee-error');
+  errEl.style.display = 'none';
+
+  if (!_selectedExamType) {
+    errEl.textContent = '검진 종류를 선택해주세요.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const dateVal = document.getElementById('ee-date').value.trim();
+  if (!dateVal) {
+    errEl.textContent = '수검일을 입력해주세요.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!/^\d{2}\.(0[1-9]|1[0-2])$/.test(dateVal)) {
+    errEl.textContent = '형식이 올바르지 않습니다. 예) 26.05';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const yr  = document.getElementById('ee-year').value;
+  const name = document.getElementById('modal-name').textContent.replace(' (퇴사)','').replace(' (휴직)','');
+  const emp  = G.employees.find(e => e.id === _editingId || e.name === name);
+  if (!emp) return;
+
+  if (!emp.exams[yr]) emp.exams[yr] = { general:'', prePlacement:'', postPlacement:'', periodic:'' };
+  emp.exams[yr][_selectedExamType] = dateVal;
+
+  // years 목록에 없으면 추가
+  if (!G.years.includes(yr)) { G.years.push(yr); G.years.sort(); }
+
+  saveToLocal();
+  closeExamEntry();
+  openEmpModal(emp.id || emp.name);  // 모달 새로고침
+  showToast(`수검일 ${dateVal} 저장됐습니다.`);
+}
 
 // ══════════════════════════════════════════════════════════
 // 직원 추가 / 수정 / 삭제
