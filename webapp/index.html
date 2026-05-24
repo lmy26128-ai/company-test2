@@ -456,101 +456,145 @@ function processFile(file) {
 }
 
 function parseAndLoad(rows, fileName) {
-  const header = rows[0].map(c => String(c).trim());
-  const colMap = detectColumns(header);
+  // 1. 헤더 행 자동 탐색 (처음 10행 안에서 '사번' 또는 '성명' 있는 행 찾기)
+  let hIdx = -1;
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const r = rows[i].map(c => String(c).trim());
+    if (r.some(c => c === '사번' || c === '성명' || c === '이름' || c === 'ID' || c === '사원번호')) {
+      hIdx = i;
+      break;
+    }
+  }
+  if (hIdx < 0) {
+    showError('사번 또는 성명 헤더를 찾을 수 없습니다. 파일의 헤더 행에 "사번", "성명" 컬럼이 있는지 확인해주세요.');
+    return;
+  }
 
-  if (!colMap.name && !colMap.id) {
+  const header    = rows[hIdx].map(c => String(c).trim());
+  const subHeader = (hIdx + 1 < rows.length) ? rows[hIdx + 1].map(c => String(c).trim()) : [];
+
+  // 2. 다음 행이 서브헤더인지 판단 (배치전, 보건증+일검, 정기 등 포함 여부)
+  const isSubHeader = subHeader.some(c =>
+    c.includes('배치전') || c.includes('배치후') || c.includes('보건증+일검') || c.includes('정기특검') || c.includes('정기검진')
+  );
+  const dataStart = hIdx + (isSubHeader ? 2 : 1);
+
+  const colMap = detectColumns(header, isSubHeader ? subHeader : null);
+
+  if (colMap.name === null && colMap.id === null) {
     showError('사번 또는 성명 컬럼을 찾을 수 없습니다. 헤더 행을 확인해주세요.');
     return;
   }
 
   const employees = [];
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = dataStart; i < rows.length; i++) {
     const r = rows[i];
-    if (!r[colMap.name ?? colMap.id] && !r[colMap.id ?? colMap.name]) continue;
+    const nameVal = colMap.name !== null ? String(r[colMap.name] ?? '').trim() : '';
+    const idVal   = colMap.id   !== null ? String(r[colMap.id]   ?? '').trim() : '';
+    if (!nameVal && !idVal) continue;
 
     const emp = {
-      id:       String(r[colMap.id]   ?? '').trim(),
-      name:     String(r[colMap.name] ?? '').trim(),
-      dept:     String(r[colMap.dept] ?? '').trim(),
-      jobType:  String(r[colMap.jobType] ?? '').trim(),
-      jobTask:  String(r[colMap.jobTask] ?? '').trim(),
-      gender:   String(r[colMap.gender] ?? '').trim(),
-      hireDate: String(r[colMap.hireDate] ?? '').trim(),
-      healthCert:     yesNo(r[colMap.healthCert]),
-      generalTarget:  yesNo(r[colMap.generalTarget]),
-      isNight:        yesNo(r[colMap.isNight]),
-      specialItems:   String(r[colMap.specialItems] ?? '').trim(),
-      hazards:        String(r[colMap.hazards] ?? '').trim(),
+      id:       idVal,
+      name:     nameVal,
+      dept:     colMap.dept      !== null ? String(r[colMap.dept]      ?? '').trim() : '',
+      jobType:  colMap.jobType   !== null ? String(r[colMap.jobType]   ?? '').trim() : '',
+      jobTask:  colMap.jobTask   !== null ? String(r[colMap.jobTask]   ?? '').trim() : '',
+      gender:   colMap.gender    !== null ? String(r[colMap.gender]    ?? '').trim() : '',
+      hireDate: colMap.hireDate  !== null ? String(r[colMap.hireDate]  ?? '').trim() : '',
+      healthCert:    colMap.healthCert    !== null ? yesNo(r[colMap.healthCert])    : false,
+      generalTarget: colMap.generalTarget !== null ? yesNo(r[colMap.generalTarget]) : true,
+      isNight:       colMap.isNight       !== null ? yesNo(r[colMap.isNight])       : false,
+      specialItems:  colMap.specialItems  !== null ? String(r[colMap.specialItems]  ?? '').trim() : '',
+      hazards:       colMap.hazards       !== null ? String(r[colMap.hazards]       ?? '').trim() : '',
       exams: {}
     };
 
-    // 연도별 검진 날짜 파싱
     for (const [yr, cols] of Object.entries(colMap.examCols || {})) {
       emp.exams[yr] = {
-        general:       extractYM(r[cols.general]),
-        prePlacement:  extractYM(r[cols.pre]),
-        postPlacement: extractYM(r[cols.post]),
-        periodic:      extractYM(r[cols.periodic])
+        general:       cols.general  !== null ? extractYM(r[cols.general])  : '',
+        prePlacement:  cols.pre      !== null ? extractYM(r[cols.pre])      : '',
+        postPlacement: cols.post     !== null ? extractYM(r[cols.post])     : '',
+        periodic:      cols.periodic !== null ? extractYM(r[cols.periodic]) : ''
       };
     }
     employees.push(emp);
   }
 
-  if (employees.length === 0) { showError('직원 데이터를 읽을 수 없습니다.'); return; }
+  if (employees.length === 0) { showError('직원 데이터를 읽을 수 없습니다. 데이터 행이 비어있을 수 있습니다.'); return; }
 
   G.employees = employees;
   G.companyName = fileName.replace(/\.[^.]+$/, '');
-  G.years = Object.keys(employees[0]?.exams || {}).sort();
+  G.years = [...new Set(employees.flatMap(e => Object.keys(e.exams)))].sort();
 
   initApp();
 }
 
-function detectColumns(header) {
-  const find = (...kws) => {
-    const idx = header.findIndex(h => kws.some(k => h.includes(k)));
+function detectColumns(header, subHeader) {
+  const find = (arr, ...kws) => {
+    const idx = arr.findIndex(h => kws.some(k => h.includes(k)));
     return idx >= 0 ? idx : null;
   };
 
   const map = {
-    id:            find('사번','ID','번호'),
-    name:          find('성명','이름','name'),
-    dept:          find('부서','파트','dept'),
-    jobType:       find('직군','job'),
-    jobTask:       find('직무','task','직책'),
-    gender:        find('성별','남녀','gender'),
-    hireDate:      find('입사일','입사','hire'),
-    healthCert:    find('보건증'),
-    generalTarget: find('일반검진 대상','일반검진대상','일반 대상'),
-    isNight:       find('야간'),
-    specialItems:  find('특수항목'),
-    hazards:       find('유해인자'),
+    id:            find(header, '사번', '사원번호', 'ID', '직원번호'),
+    name:          find(header, '성명', '이름', '성 명', 'name'),
+    dept:          find(header, '부서', '파트', '소속', 'dept'),
+    jobType:       find(header, '직군', '고용형태', 'job'),
+    jobTask:       find(header, '직무', '직책', '직위', 'task'),
+    gender:        find(header, '성별', '남녀', '남녀구분', 'gender'),
+    hireDate:      find(header, '입사일', '입사', 'hire'),
+    healthCert:    find(header, '보건증'),
+    generalTarget: find(header, '일반', '일반검진'),
+    isNight:       find(header, '야간'),
+    specialItems:  find(header, '특수항목'),
+    hazards:       find(header, '유해인자'),
     examCols:      {}
   };
 
-  // 연도 컬럼 자동 탐색 (YY년, 24년, 25년 형식)
+  // 연도 컬럼 탐색
   const yearPat = /^(\d{2})년?$/;
-  for (let i = 0; i < header.length; i++) {
-    const m = header[i].match(yearPat);
-    if (m) {
+
+  if (subHeader) {
+    // 2단 헤더 구조: 상단에 "24년", 하단에 "보건증+일검", "배치전", "배치후", "정기특검"
+    for (let i = 0; i < header.length; i++) {
+      const m = header[i].match(yearPat);
+      if (!m) continue;
       const yr = m[1];
-      if (!map.examCols[yr]) {
-        map.examCols[yr] = { general: i, pre: i+1, post: i+2, periodic: i+3 };
+      if (map.examCols[yr]) continue;
+
+      // 이 컬럼부터 최대 5칸 안에서 서브헤더로 세부 위치 탐색
+      const slice = subHeader.slice(i, i + 5);
+      const relGen  = slice.findIndex(c => c.includes('보건증') || c.includes('일검') || c.includes('일반'));
+      const relPre  = slice.findIndex(c => c.includes('배치전'));
+      const relPost = slice.findIndex(c => c.includes('배치후') || (c.includes('6개월') && !c.includes('배치전')));
+      const relPer  = slice.findIndex(c => c.includes('정기'));
+
+      // 4개 서브컬럼이 모두 있으면 각 위치 사용, 없으면 순서대로 fallback
+      if (relGen >= 0 && relPre >= 0 && relPost >= 0 && relPer >= 0) {
+        map.examCols[yr] = { general: i+relGen, pre: i+relPre, post: i+relPost, periodic: i+relPer };
+      } else {
+        // 단일 컬럼 연도 (예: 23년 - 컬럼 하나만)
+        map.examCols[yr] = { general: i, pre: null, post: null, periodic: null };
       }
     }
-  }
-
-  // 연도 컬럼이 없으면 YY.MM 패턴이 있는 컬럼 찾기
-  if (Object.keys(map.examCols).length === 0) {
-    // 헤더에 24, 25, 26 숫자가 포함된 컬럼 그룹 찾기
+  } else {
+    // 단일 헤더 구조: 헤더 행에 직접 검진유형 명시
     for (let i = 0; i < header.length; i++) {
-      const h = header[i];
-      const ym = /^(2\d)\.(0[1-9]|1[0-2])$/.test(h);
-      const numM = h.match(/^(\d{2})[^년]/);
-      if (ym || numM) {
-        const yr = h.slice(0,2);
+      const m = header[i].match(yearPat);
+      if (m) {
+        const yr = m[1];
         if (!map.examCols[yr]) map.examCols[yr] = { general: i, pre: i+1, post: i+2, periodic: i+3 };
       }
+    }
+    // 연도 컬럼이 없으면 "일반검진", "배치전" 등을 직접 찾아 현재연도로 매핑
+    if (Object.keys(map.examCols).length === 0) {
+      const yr = String(new Date().getFullYear() % 100).padStart(2,'0');
+      map.examCols[yr] = {
+        general:  find(header, '일반검진', '보건증+일검', '일반'),
+        pre:      find(header, '배치전'),
+        post:     find(header, '배치후'),
+        periodic: find(header, '정기특검', '정기검진', '정기')
+      };
     }
   }
 
