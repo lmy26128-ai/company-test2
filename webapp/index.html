@@ -350,6 +350,16 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <div class="dz-sub">.xlsx / .xls / .csv 지원</div>
     </div>
 
+    <!-- 휴직자·퇴사자 안내 -->
+    <div style="margin-top:20px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:16px 18px;text-align:left;font-size:.82rem;color:#78350f">
+      <div style="font-weight:700;margin-bottom:8px">📋 휴직자 · 퇴사자 처리 방법</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div><span style="background:#dcfce7;color:#166534;border-radius:4px;padding:1px 7px;font-weight:700;margin-right:6px">자동 감지</span>엑셀에 <b>"재직상태"</b> 컬럼 추가 후 값에 <b>"휴직"</b> 또는 <b>"퇴사"</b> 입력 시 업로드 즉시 자동 분류</div>
+        <div><span style="background:#e0e7ff;color:#3730a3;border-radius:4px;padding:1px 7px;font-weight:700;margin-right:6px">일괄 처리</span>업로드 후 직원 목록에서 <b>체크박스로 여러 명 선택</b> → 한번에 휴직/퇴사 처리 가능</div>
+        <div><span style="background:#f3f4f6;color:#374151;border-radius:4px;padding:1px 7px;font-weight:700;margin-right:6px">개별 처리</span>각 직원 이름 클릭 → <b>휴직 처리 / 퇴사 처리</b> 버튼으로 개별 지정</div>
+      </div>
+    </div>
+
     <div class="privacy-note">🔒 모든 데이터는 이 브라우저에만 저장됩니다. 서버로 전송되지 않습니다.</div>
     <button class="sample-btn" onclick="loadSampleData()">샘플 데이터로 먼저 체험해보기</button>
     <div id="upload-error" style="margin-top:14px;color:var(--danger);font-size:.85rem;display:none"></div>
@@ -429,10 +439,21 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <button class="btn-outline" onclick="exportEmployeeList()">📥 Excel 내보내기</button>
     </div>
     <div class="result-count" id="emp-result-count"></div>
+
+    <!-- 일괄 처리 툴바 (선택 시 표시) -->
+    <div id="bulk-toolbar" style="display:none;margin-bottom:10px;padding:10px 14px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="bulk-count-label" style="font-size:.85rem;font-weight:700;color:var(--primary)">0명 선택됨</span>
+      <button class="btn-outline" style="color:var(--warn);border-color:var(--warn);padding:4px 12px;font-size:.82rem" onclick="bulkSetStatus('leave')">🏥 선택 직원 휴직 처리</button>
+      <button class="btn-outline" style="color:var(--danger);border-color:var(--danger);padding:4px 12px;font-size:.82rem" onclick="bulkSetStatus('resigned')">📤 선택 직원 퇴사 처리</button>
+      <button class="btn-outline" style="color:var(--success);border-color:var(--success);padding:4px 12px;font-size:.82rem" onclick="bulkSetStatus('active')">✅ 선택 직원 현직 복귀</button>
+      <button class="btn-outline" style="padding:4px 12px;font-size:.82rem" onclick="clearBulkSelect()">선택 취소</button>
+    </div>
+
     <div class="emp-table-wrap">
       <table class="emp-table">
         <thead>
           <tr id="emp-thead-row">
+            <th style="width:36px"><input type="checkbox" id="chk-all" title="전체 선택" onchange="toggleSelectAll(this.checked)"></th>
             <th onclick="sortBy('id')">사번 ↕</th>
             <th onclick="sortBy('name')">성명 ↕</th>
             <th>부서</th>
@@ -496,7 +517,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <div class="emp-table-wrap">
         <table class="emp-table">
           <thead><tr>
-            <th>사번</th><th>성명</th><th>부서</th><th>검진유형</th><th>예정일</th><th>초과일수</th>
+            <th>사번</th><th>성명</th><th>부서</th><th>직군</th><th>미실시 항목</th><th>연도</th>
           </tr></thead>
           <tbody id="report-miss-tbody"></tbody>
         </table>
@@ -584,9 +605,9 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="emp-form-fields">
         <div><label class="form-label">사번</label><input class="form-input" id="f-id" placeholder="예) E001"></div>
         <div><label class="form-label">성명 *</label><input class="form-input" id="f-name" placeholder="홍길동"></div>
-        <div><label class="form-label">부서</label><input class="form-input" id="f-dept" placeholder="생산1파트"></div>
-        <div><label class="form-label">직군</label><input class="form-input" id="f-jobtype" placeholder="생산기술직"></div>
-        <div><label class="form-label">직무</label><input class="form-input" id="f-jobtask" placeholder=""></div>
+        <div><label class="form-label">부서</label><input class="form-input" id="f-dept" list="dl-dept" placeholder="부서 선택 또는 직접 입력" autocomplete="off"><datalist id="dl-dept"></datalist></div>
+        <div><label class="form-label">직군</label><input class="form-input" id="f-jobtype" list="dl-jobtype" placeholder="직군 선택 또는 직접 입력" autocomplete="off"><datalist id="dl-jobtype"></datalist></div>
+        <div><label class="form-label">직무</label><input class="form-input" id="f-jobtask" list="dl-jobtask" placeholder="" autocomplete="off"><datalist id="dl-jobtask"></datalist></div>
         <div><label class="form-label">성별</label>
           <select class="form-input" id="f-gender"><option value="">선택</option><option>남</option><option>여</option></select></div>
         <div><label class="form-label">입사일</label><input class="form-input" id="f-hiredate" placeholder="2024-01-01"></div>
@@ -664,19 +685,53 @@ function processFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const wb = XLSX.read(e.target.result, { type: 'array', cellStyles: true });
       // 첫 번째 유효 시트 사용 (이름에 '전체' 포함 시 제외 - 주민번호 시트)
       let sheetName = wb.SheetNames.find(n => !n.includes('전체') && !n.includes('주민')) || wb.SheetNames[0];
       const ws = wb.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
       if (rows.length < 2) { showError('데이터가 없는 파일입니다.'); return; }
-      parseAndLoad(rows, file.name);
+      parseAndLoad(rows, file.name, ws);
     } catch(err) { showError('파일을 읽을 수 없습니다: ' + err.message); }
   };
   reader.readAsArrayBuffer(file);
 }
 
-function parseAndLoad(rows, fileName) {
+function parseExcelDate(v) {
+  if (v === undefined || v === null || v === '') return '';
+  if (v instanceof Date) {
+    const y = v.getFullYear(), m = String(v.getMonth()+1).padStart(2,'0'), d = String(v.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  const n = Number(v);
+  if (!isNaN(n) && n > 30000 && n < 80000) {
+    const d = new Date(Math.round((n - 25569) * 86400 * 1000));
+    const y = d.getUTCFullYear(), mo = String(d.getUTCMonth()+1).padStart(2,'0'), dy = String(d.getUTCDate()).padStart(2,'0');
+    return `${y}-${mo}-${dy}`;
+  }
+  return String(v).trim();
+}
+
+function detectRowStatus(ws, rowIdx) {
+  const enc = (c) => XLSX.utils.encode_cell({ r: rowIdx, c });
+  for (let c = 0; c < 16; c++) {
+    const cell = ws[enc(c)];
+    if (!cell || !cell.s) continue;
+    const fill = cell.s.fgColor || cell.s.bgColor;
+    if (!fill || !fill.rgb) continue;
+    const rgb = fill.rgb.toUpperCase();
+    if (rgb === 'FFFFFFFF' || rgb === '00000000' || rgb.length < 6) continue;
+    const hex = rgb.length === 8 ? rgb.slice(2) : rgb;
+    const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+    // 핑크 계열 → 휴직자
+    if (r > 200 && r > g + 20 && r > b + 20 && g > 80) return 'leave';
+    // 회색 계열 → 퇴사자
+    if (Math.abs(r-g) < 30 && Math.abs(g-b) < 30 && r > 100 && r < 215) return 'resigned';
+  }
+  return 'active';
+}
+
+function parseAndLoad(rows, fileName, ws) {
   // 1. 헤더 행 자동 탐색 (처음 10행 안에서 '사번' 또는 '성명' 있는 행 찾기)
   let hIdx = -1;
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
@@ -714,6 +769,24 @@ function parseAndLoad(rows, fileName) {
     const idVal   = colMap.id   !== null ? String(r[colMap.id]   ?? '').trim() : '';
     if (!nameVal && !idVal) continue;
 
+    const isNight = colMap.isNight !== null ? yesNo(r[colMap.isNight]) : false;
+    let specialItems = colMap.specialItems !== null ? String(r[colMap.specialItems] ?? '').trim() : '';
+    let hazards      = colMap.hazards      !== null ? String(r[colMap.hazards]      ?? '').trim() : '';
+    // 특수항목↔유해인자 동기화 (야간 접두 규칙 적용)
+    if (specialItems && specialItems !== 'X' && !hazards) {
+      hazards = isNight ? '야간, ' + specialItems : specialItems;
+    } else if (hazards && hazards !== 'X' && !specialItems) {
+      specialItems = hazards.replace(/^야간[,，]\s*/i, '');
+    }
+
+    // 재직상태 컬럼으로만 자동 감지 (색상은 회사마다 의미가 달라 사용 안 함)
+    let rowStatus = 'active';
+    if (colMap.empStatus !== null) {
+      const sv = String(r[colMap.empStatus] ?? '').trim();
+      if (sv.includes('휴직') || sv.toLowerCase() === 'leave') rowStatus = 'leave';
+      else if (sv.includes('퇴사') || sv.includes('퇴직') || sv.toLowerCase() === 'resigned') rowStatus = 'resigned';
+    }
+
     const emp = {
       id:       idVal,
       name:     nameVal,
@@ -721,12 +794,13 @@ function parseAndLoad(rows, fileName) {
       jobType:  colMap.jobType   !== null ? String(r[colMap.jobType]   ?? '').trim() : '',
       jobTask:  colMap.jobTask   !== null ? String(r[colMap.jobTask]   ?? '').trim() : '',
       gender:   colMap.gender    !== null ? String(r[colMap.gender]    ?? '').trim() : '',
-      hireDate: colMap.hireDate  !== null ? String(r[colMap.hireDate]  ?? '').trim() : '',
+      hireDate: colMap.hireDate  !== null ? parseExcelDate(r[colMap.hireDate]) : '',
       healthCert:    colMap.healthCert    !== null ? yesNo(r[colMap.healthCert])    : false,
       generalTarget: colMap.generalTarget !== null ? yesNo(r[colMap.generalTarget]) : true,
-      isNight:       colMap.isNight       !== null ? yesNo(r[colMap.isNight])       : false,
-      specialItems:  colMap.specialItems  !== null ? String(r[colMap.specialItems]  ?? '').trim() : '',
-      hazards:       colMap.hazards       !== null ? String(r[colMap.hazards]       ?? '').trim() : '',
+      isNight,
+      specialItems,
+      hazards,
+      status: rowStatus,
       exams: {}
     };
 
@@ -769,6 +843,7 @@ function detectColumns(header, subHeader) {
     isNight:       find(header, '야간'),
     specialItems:  find(header, '특수항목'),
     hazards:       find(header, '유해인자'),
+    empStatus:     find(header, '재직상태', '재직여부', '상태', '구분', '재직구분', 'status'),
     examCols:      {}
   };
 
@@ -937,8 +1012,10 @@ function populateYearSelectors() {
   const years = G.years.length ? G.years : [String(CUR_YEAR)];
   const genSel = document.getElementById('gen-year');
   genSel.innerHTML = '';
-  const nextYr = Math.max(...years.map(Number)) + 1;
-  [nextYr, nextYr+1].forEach(y => {
+  // 데이터에 이미 27년 컬럼이 있어도 27년부터 생성 가능하도록 CUR_YEAR+1 기준
+  const maxDataYr = Math.max(...years.map(Number));
+  const nextYr = Math.max(CUR_YEAR + 1, maxDataYr);
+  [nextYr, nextYr+1, nextYr+2].forEach(y => {
     const o = document.createElement('option'); o.value = y; o.textContent = '20'+y+'년 ('+y+'년)';
     genSel.appendChild(o);
   });
@@ -977,8 +1054,7 @@ function getExamStatus(ym) {
   const d = ymToDate(ym);
   if (!d) return 'none';
   const diff = Math.floor((d - TODAY) / 86400000);
-  if (diff < -30) return 'overdue';
-  if (diff < 0) return 'done';
+  if (diff < 0) return 'done';      // 과거 날짜 = 수검 완료로 간주
   if (diff <= 30) return 'upcoming';
   return 'scheduled';
 }
@@ -1124,8 +1200,9 @@ function switchEmpTab(tab) {
   document.getElementById('filter-status').style.display  = tab === 'active' ? '' : 'none';
 
   const thead = document.getElementById('emp-thead-row');
+  const chkTh = `<th style="width:36px"><input type="checkbox" id="chk-all" title="전체 선택" onchange="toggleSelectAll(this.checked)"></th>`;
   if (tab === 'resigned') {
-    thead.innerHTML = `
+    thead.innerHTML = chkTh + `
       <th onclick="sortBy('id')">사번 ↕</th>
       <th onclick="sortBy('name')">성명 ↕</th>
       <th>부서</th><th>직군</th>
@@ -1133,7 +1210,7 @@ function switchEmpTab(tab) {
       <th>유해인자</th>
       <th>마지막 일반검진</th><th>마지막 정기특검</th>`;
   } else if (tab === 'leave') {
-    thead.innerHTML = `
+    thead.innerHTML = chkTh + `
       <th onclick="sortBy('id')">사번 ↕</th>
       <th onclick="sortBy('name')">성명 ↕</th>
       <th>부서</th><th>직군</th>
@@ -1141,7 +1218,7 @@ function switchEmpTab(tab) {
       <th>유해인자</th>
       <th>마지막 일반검진</th><th>마지막 정기특검</th>`;
   } else {
-    thead.innerHTML = `
+    thead.innerHTML = chkTh + `
       <th onclick="sortBy('id')">사번 ↕</th>
       <th onclick="sortBy('name')">성명 ↕</th>
       <th>부서</th><th>직군</th>
@@ -1224,8 +1301,15 @@ function renderEmployeeList() {
   }
 
   tbody.innerHTML = list.map(emp => {
-    const hazardShort = emp.hazards ? emp.hazards.split(',').slice(0,2).join(', ') + (emp.hazards.split(',').length > 2 ? ' 외' : '') : '—';
+    const _hz = (emp.hazards || '').trim();
+    const _hzNone = !_hz || _hz === 'X' || _hz === 'x' || _hz === '-' || _hz === '—';
+    const _hzParts = _hzNone ? [] : _hz.split(',').map(s => s.trim()).filter(Boolean);
+    const hazardShort = _hzParts.length === 0 ? '—'
+      : _hzParts[0] + (_hzParts.length > 1 ? ` 외 ${_hzParts.length - 1}` : '');
     const clickId = (emp.id || emp.name).replace(/'/g, "\\'");
+
+    const empKey = (emp.id || emp.name).replace(/"/g, '&quot;');
+    const chkTd = `<td onclick="event.stopPropagation()"><input type="checkbox" class="emp-chk" data-key="${empKey}" onchange="onEmpCheck()"></td>`;
 
     if (isSpecial) {
       const lastEx = [...G.years].reverse().map(y => emp.exams?.[y]).find(e => e?.general || e?.periodic) || {};
@@ -1233,6 +1317,7 @@ function renderEmployeeList() {
         ? `<span class="resigned-badge">📤 ${emp.resignDate||'날짜 미입력'}</span>`
         : `<span style="background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 8px;font-size:.78rem;font-weight:700">🏥 ${emp.leaveDate||'날짜 미입력'}</span>`;
       return `<tr onclick="openEmpModal('${clickId}')">
+        ${chkTd}
         <td class="emp-id-cell" data-label="사번">${emp.id||'—'}</td>
         <td class="emp-name-cell" data-label="성명">${emp.name}</td>
         <td data-label="부서"><span class="tag-dept">${emp.dept||'—'}</span></td>
@@ -1249,6 +1334,7 @@ function renderEmployeeList() {
     const pStatus = getExamStatus(ex.periodic);
     const overall = getEmpOverallStatus(emp);
     return `<tr onclick="openEmpModal('${clickId}')">
+      ${chkTd}
       <td class="emp-id-cell" data-label="사번">${emp.id||'—'}</td>
       <td class="emp-name-cell" data-label="성명">${emp.name}</td>
       <td data-label="부서"><span class="tag-dept">${emp.dept||'—'}</span></td>
@@ -1260,6 +1346,53 @@ function renderEmployeeList() {
       <td data-label="상태">${statusBadge(overall)}</td>
     </tr>`;
   }).join('');
+}
+
+function getCheckedKeys() {
+  return [...document.querySelectorAll('.emp-chk:checked')].map(c => c.dataset.key);
+}
+
+function onEmpCheck() {
+  const keys = getCheckedKeys();
+  const toolbar = document.getElementById('bulk-toolbar');
+  if (keys.length > 0) {
+    toolbar.style.display = 'flex';
+    document.getElementById('bulk-count-label').textContent = `${keys.length}명 선택됨`;
+  } else {
+    toolbar.style.display = 'none';
+  }
+  const all = document.querySelectorAll('.emp-chk');
+  const chkAll = document.getElementById('chk-all');
+  if (chkAll) chkAll.checked = all.length > 0 && keys.length === all.length;
+}
+
+function toggleSelectAll(checked) {
+  document.querySelectorAll('.emp-chk').forEach(c => { c.checked = checked; });
+  onEmpCheck();
+}
+
+function clearBulkSelect() {
+  document.querySelectorAll('.emp-chk').forEach(c => { c.checked = false; });
+  const chkAll = document.getElementById('chk-all');
+  if (chkAll) chkAll.checked = false;
+  document.getElementById('bulk-toolbar').style.display = 'none';
+}
+
+function bulkSetStatus(newStatus) {
+  const keys = getCheckedKeys();
+  if (keys.length === 0) return;
+  const label = newStatus === 'leave' ? '휴직' : newStatus === 'resigned' ? '퇴사' : '현직 복귀';
+  if (!confirm(`선택한 ${keys.length}명을 ${label} 처리할까요?`)) return;
+  keys.forEach(key => {
+    const emp = G.employees.find(e => (e.id || e.name) === key);
+    if (!emp) return;
+    emp.status = newStatus;
+    if (newStatus === 'active') { emp.leaveDate = ''; emp.resignDate = ''; }
+  });
+  saveToLocal();
+  clearBulkSelect();
+  renderEmployeeList();
+  showToast(`${keys.length}명 ${label} 처리 완료`);
 }
 
 function cellDisplay(ym, status) {
@@ -1420,6 +1553,21 @@ function saveExamEntry() {
 // ══════════════════════════════════════════════════════════
 let _editingId = null;
 
+function fillFormDatalist() {
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
+  const depts    = uniq(G.employees.map(e => e.dept));
+  const jobtypes = uniq(G.employees.map(e => e.jobType));
+  const jobtasks = uniq(G.employees.map(e => e.jobTask));
+  const fill = (id, items) => {
+    const dl = document.getElementById(id);
+    if (!dl) return;
+    dl.innerHTML = items.map(v => `<option value="${v}">`).join('');
+  };
+  fill('dl-dept', depts);
+  fill('dl-jobtype', jobtypes);
+  fill('dl-jobtask', jobtasks);
+}
+
 function openEmpForm() {
   _editingId = null;
   document.getElementById('form-modal-title').textContent = '직원 추가';
@@ -1428,6 +1576,7 @@ function openEmpForm() {
   document.getElementById('f-night').value     = 'N';
   document.getElementById('f-general').value   = 'Y';
   document.getElementById('f-healthcert').value = 'N';
+  fillFormDatalist();
   buildExamFormFields(null);
   document.getElementById('emp-form-modal').classList.add('open');
 }
@@ -1436,6 +1585,7 @@ function openEmpFormEdit() {
   const emp = G.employees.find(e => e.id === _editingId || e.name === document.getElementById('modal-name').textContent);
   if (!emp) return;
   _editingId = emp.id || emp.name;
+  fillFormDatalist();
   document.getElementById('form-modal-title').textContent = '직원 수정';
   document.getElementById('f-id').value        = emp.id        || '';
   document.getElementById('f-name').value      = emp.name      || '';
@@ -1706,7 +1856,9 @@ function renderReport() {
   const yr = document.getElementById('report-year').value;
   const dept = document.getElementById('report-dept').value;
 
+  // 현직자만 집계 (휴직자·퇴사자 제외)
   let list = G.employees.filter(emp => {
+    if (emp.status && emp.status !== 'active') return false;
     if (dept && emp.dept !== dept) return false;
     return true;
   });
@@ -1717,16 +1869,44 @@ function renderReport() {
   list.forEach(emp => {
     targetYears.forEach(y => {
       const ex = emp.exams[y] || {};
-      ['general','periodic'].forEach(type => {
-        const ym = ex[type];
-        if (!ym) return;
+      const hasSpecial = (emp.specialItems && emp.specialItems !== 'X') ||
+                         (emp.hazards && emp.hazards !== 'X');
+
+      // 완료율 집계 (날짜 있는 항목만)
+      [ex.general, ex.prePlacement, ex.postPlacement, ex.periodic].filter(Boolean).forEach(ym => {
         totalExams++;
-        const s = getExamStatus(ym);
-        if (s === 'done') doneExams++;
-        if (s === 'overdue') {
-          overdueList.push({ emp, yr: y, type: type === 'general' ? '일반검진' : '정기특검', ym, days: getDaysOverdue(ym) });
-        }
+        if (getExamStatus(ym) === 'done') doneExams++;
       });
+
+      // 미수검 항목 수집: 날짜 없는 대상자 OR 미래 예정(아직 미수검)
+      const pendingItems = [];
+
+      // 일반검진
+      if (emp.generalTarget) {
+        const s = getExamStatus(ex.general);
+        if (!ex.general) pendingItems.push({ type: '일반검진', ym: '미입력' });
+        else if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '일반검진', ym: ex.general });
+      }
+      // 배치전
+      if (ex.prePlacement) {
+        const s = getExamStatus(ex.prePlacement);
+        if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '배치전검진', ym: ex.prePlacement });
+      }
+      // 배치후
+      if (ex.postPlacement) {
+        const s = getExamStatus(ex.postPlacement);
+        if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '배치후검진', ym: ex.postPlacement });
+      }
+      // 정기특검
+      if (hasSpecial) {
+        const s = getExamStatus(ex.periodic);
+        if (!ex.periodic) pendingItems.push({ type: '정기특검', ym: '미입력' });
+        else if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '정기특검', ym: ex.periodic });
+      }
+
+      if (pendingItems.length > 0) {
+        overdueList.push({ emp, yr: y, items: pendingItems });
+      }
     });
   });
 
@@ -1758,32 +1938,51 @@ function renderReport() {
       </div>`;
     }).join('');
 
-  document.getElementById('report-miss-count').textContent = overdueList.length + '건';
+  document.getElementById('report-miss-count').textContent = overdueList.length + '명';
   document.getElementById('report-miss-tbody').innerHTML = overdueList.length === 0
-    ? '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-sub)">미실시 항목이 없습니다.</td></tr>'
-    : overdueList.sort((a,b) => b.days - a.days).map(({emp, yr, type, ym, days}) =>
-        `<tr onclick="openEmpModal('${emp.id}')">
+    ? '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-sub)">미수검 항목이 없습니다.</td></tr>'
+    : overdueList.map(({emp, yr, items}) => {
+        const itemStr = items.map(({type, ym}) => {
+          if (ym === '미입력') return `<span style="color:var(--danger)">${type}(미입력)</span>`;
+          const [yy, mm] = ym.split('.');
+          return `<span style="color:var(--warn)">${type}(20${yy}년 ${parseInt(mm)}월)</span>`;
+        }).join(', ');
+        return `<tr onclick="openEmpModal('${(emp.id||emp.name).replace(/'/g,"\\'")}')">
           <td class="emp-id-cell">${emp.id||'—'}</td>
           <td class="emp-name-cell">${emp.name}</td>
-          <td><span class="tag-dept">${emp.dept}</span></td>
-          <td>${type}</td>
-          <td>${ym}</td>
-          <td class="text-danger" style="font-weight:700">${days}일</td>
-        </tr>`
-      ).join('');
+          <td><span class="tag-dept">${emp.dept||'—'}</span></td>
+          <td>${emp.jobType||'—'}</td>
+          <td>${itemStr}</td>
+          <td>20${yr}년</td>
+        </tr>`;
+      }).join('');
 }
 
 function exportReport() {
-  const overdueRows = [['사번','성명','부서','직군','검진유형','예정일','초과일수']];
-  G.employees.forEach(emp => {
+  const overdueRows = [['사번','성명','부서','직군','미수검 항목','예정일','연도']];
+  G.employees.filter(e => !e.status || e.status === 'active').forEach(emp => {
     G.years.forEach(y => {
       const ex = emp.exams[y] || {};
-      ['general','periodic'].forEach(type => {
-        const ym = ex[type];
-        if (!ym || getExamStatus(ym) !== 'overdue') return;
-        overdueRows.push([emp.id, emp.name, emp.dept, emp.jobType,
-          type === 'general' ? '일반검진' : '정기특검', ym, getDaysOverdue(ym)+'일']);
-      });
+      const hasSpecial = (emp.specialItems && emp.specialItems !== 'X') || (emp.hazards && emp.hazards !== 'X');
+      const pending = [];
+      if (emp.generalTarget) {
+        const s = getExamStatus(ex.general);
+        if (!ex.general) pending.push({ type: '일반검진', ym: '미입력' });
+        else if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '일반검진', ym: ex.general });
+      }
+      if (ex.prePlacement) { const s = getExamStatus(ex.prePlacement); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치전검진', ym: ex.prePlacement }); }
+      if (ex.postPlacement) { const s = getExamStatus(ex.postPlacement); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치후검진', ym: ex.postPlacement }); }
+      if (hasSpecial) {
+        const s = getExamStatus(ex.periodic);
+        if (!ex.periodic) pending.push({ type: '정기특검', ym: '미입력' });
+        else if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '정기특검', ym: ex.periodic });
+      }
+      if (pending.length > 0) {
+        pending.forEach(({type, ym}) => {
+          const dateStr = ym === '미입력' ? '미입력' : `20${ym.split('.')[0]}년 ${parseInt(ym.split('.')[1])}월`;
+          overdueRows.push([emp.id, emp.name, emp.dept, emp.jobType, type, dateStr, '20'+y+'년']);
+        });
+      }
     });
   });
   const ws = XLSX.utils.aoa_to_sheet(overdueRows);
