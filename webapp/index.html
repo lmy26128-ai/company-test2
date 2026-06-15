@@ -478,7 +478,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <strong>산업안전보건법 제130조</strong> 기준으로 다음 연도 검진 일정을 자동 계산합니다.<br>
       · 일반검진: 전년도 동월 기준 (미확인 시 4월 기본값)<br>
       · 배치전: 신규 배치자 입사월 기준 / 배치후: 배치전 +6개월<br>
-      · 정기특수검진: 유해인자 있는 직원, 전년도 동월 기준
+      · 정기특수검진: 유해인자 있는 직원, 전년도 동월 기준 / 최초 배치 시 배치후검진일로부터 1년
     </div>
     <div class="flex-row" style="margin-bottom:20px;gap:16px;flex-wrap:wrap">
       <div class="year-selector">
@@ -619,8 +619,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
           <select class="form-input" id="f-healthcert"><option value="N">아니오</option><option value="Y">예</option></select></div>
         <div><label class="form-label">휴직일 <span style="font-weight:400;text-transform:none">(휴직자만)</span></label><input class="form-input" id="f-leavedate" placeholder="2026-01-01"></div>
         <div><label class="form-label">퇴사일 <span style="font-weight:400;text-transform:none">(퇴사자만)</span></label><input class="form-input" id="f-resigndate" placeholder="2026-01-01"></div>
-        <div style="grid-column:1/-1"><label class="form-label">특수항목</label><input class="form-input" id="f-special" placeholder="소음, 용접 (없으면 X)"></div>
-        <div style="grid-column:1/-1"><label class="form-label">유해인자</label><input class="form-input" id="f-hazard" placeholder="야간, 소음, 용접흄"></div>
+        <div style="grid-column:1/-1"><label class="form-label">유해인자</label><input class="form-input" id="f-hazard" placeholder="야간, 소음, 용접흄 (없으면 X)"></div>
       </div>
       <div style="margin-top:18px" id="exam-form-area"></div>
     </div>
@@ -772,11 +771,9 @@ function parseAndLoad(rows, fileName, ws) {
     const isNight = colMap.isNight !== null ? yesNo(r[colMap.isNight]) : false;
     let specialItems = colMap.specialItems !== null ? String(r[colMap.specialItems] ?? '').trim() : '';
     let hazards      = colMap.hazards      !== null ? String(r[colMap.hazards]      ?? '').trim() : '';
-    // 특수항목↔유해인자 동기화 (야간 접두 규칙 적용)
+    // 특수항목을 유해인자로 통합 (유해인자가 없을 때만)
     if (specialItems && specialItems !== 'X' && !hazards) {
       hazards = isNight ? '야간, ' + specialItems : specialItems;
-    } else if (hazards && hazards !== 'X' && !specialItems) {
-      specialItems = hazards.replace(/^야간[,，]\s*/i, '');
     }
 
     // 재직상태 컬럼으로만 자동 감지 (색상은 회사마다 의미가 달라 사용 안 함)
@@ -798,7 +795,6 @@ function parseAndLoad(rows, fileName, ws) {
       healthCert:    colMap.healthCert    !== null ? yesNo(r[colMap.healthCert])    : false,
       generalTarget: colMap.generalTarget !== null ? yesNo(r[colMap.generalTarget]) : true,
       isNight,
-      specialItems,
       hazards,
       status: rowStatus,
       exams: {}
@@ -859,17 +855,27 @@ function detectColumns(header, subHeader) {
       if (map.examCols[yr]) continue;
 
       // 이 컬럼부터 최대 5칸 안에서 서브헤더로 세부 위치 탐색
-      const slice = subHeader.slice(i, i + 5);
+      const slice = subHeader.slice(i, i + 5).map(c => String(c ?? '').trim());
       const relGen  = slice.findIndex(c => c.includes('보건증') || c.includes('일검') || c.includes('일반'));
       const relPre  = slice.findIndex(c => c.includes('배치전'));
       const relPost = slice.findIndex(c => c.includes('배치후') || (c.includes('6개월') && !c.includes('배치전')));
-      const relPer  = slice.findIndex(c => c.includes('정기'));
+      // 정기특검: 명시 키워드 우선, 없으면 첫 컬럼이 연도 레이블(XX년)인 경우 정기특검으로 간주
+      let relPer = slice.findIndex(c => c.includes('정기'));
+      if (relPer < 0 && /^\d{2}년$/.test(slice[0])) relPer = 0;
 
-      // 4개 서브컬럼이 모두 있으면 각 위치 사용, 없으면 순서대로 fallback
       if (relGen >= 0 && relPre >= 0 && relPost >= 0 && relPer >= 0) {
+        // 4개 서브컬럼 완전 매칭
         map.examCols[yr] = { general: i+relGen, pre: i+relPre, post: i+relPost, periodic: i+relPer };
+      } else if (relGen >= 0) {
+        // 부분 매칭 허용 (예: 26년 섹션에 배치전 없음)
+        map.examCols[yr] = {
+          general:  i + relGen,
+          pre:      relPre  >= 0 ? i + relPre  : null,
+          post:     relPost >= 0 ? i + relPost : null,
+          periodic: relPer  >= 0 ? i + relPer  : null
+        };
       } else {
-        // 단일 컬럼 연도 (예: 23년 - 컬럼 하나만)
+        // 단일 컬럼 연도 (서브헤더 없는 경우)
         map.examCols[yr] = { general: i, pre: null, post: null, periodic: null };
       }
     }
@@ -1066,10 +1072,28 @@ function getDaysOverdue(ym) {
 }
 
 function getEmpOverallStatus(emp) {
-  const latestYear = G.years[G.years.length - 1];
-  if (!latestYear) return 'none';
-  const ex = emp.exams[latestYear] || {};
+  // 당해연도 기준으로 판단 (27년 컬럼 있어도 올해=26년 체크)
+  const curYr = String(CUR_YEAR).padStart(2, '0');
+  const targetYear = G.years.includes(curYr) ? curYr : G.years[G.years.length - 1];
+  if (!targetYear) return 'none';
+  const ex = emp.exams[targetYear] || {};
   const statuses = [ex.general, ex.periodic].filter(Boolean).map(getExamStatus);
+
+  // 유해인자 있는데 정기특검 미입력 체크
+  const hasHazards = emp.hazards && emp.hazards !== 'X';
+  if (hasHazards && !ex.periodic) {
+    // 이번 연도 배치후 날짜 있으면 → 정기특검은 배치후+1년(내년)이므로 패스
+    if (!ex.postPlacement) {
+      // 이전 연도 정기특검 이력 있으면 올해도 있어야 함
+      const hadPriorPeriodic = G.years.some(y => y < targetYear && emp.exams[y]?.periodic);
+      if (hadPriorPeriodic) statuses.push('upcoming');
+    }
+  }
+
+  // 필수 검진이 하나도 입력 안 된 경우 → 공허한 참(vacuous true) 방지
+  const needsAnyExam = (emp.generalTarget !== false) || hasHazards;
+  if (needsAnyExam && statuses.length === 0) return 'overdue';
+
   if (statuses.includes('overdue')) return 'overdue';
   if (statuses.includes('upcoming')) return 'upcoming';
   if (statuses.every(s => s === 'done' || s === 'scheduled')) return 'done';
@@ -1136,15 +1160,25 @@ function renderDashboard() {
   if (urgentList.length === 0) {
     ul.innerHTML = '<div class="empty-state"><div class="es-icon">✅</div><p>긴급 처리 항목이 없습니다.</p></div>';
   } else {
+    const curYrStr = String(CUR_YEAR).padStart(2, '0');
+    const dispYear = G.years.includes(curYrStr) ? curYrStr : latestYear;
     const rows = urgentList.slice(0, 10).map(({emp, status}) => {
-      const ex = emp.exams[latestYear] || {};
-      const examType = status === 'overdue' ?
-        [ex.general && getExamStatus(ex.general)==='overdue' ? '일반검진' : '',
-         ex.periodic && getExamStatus(ex.periodic)==='overdue' ? '정기특검' : ''].filter(Boolean).join(', ') || '검진'
-        : '검진';
-      const days = status === 'overdue' ?
-        `${Math.max(getDaysOverdue(ex.general), getDaysOverdue(ex.periodic))}일 초과` :
-        `D-${Math.ceil((ymToDate(ex.general || ex.periodic) - TODAY) / 86400000)}`;
+      const ex = emp.exams[dispYear] || {};
+      // 미수검 항목 판별
+      const missingItems = [];
+      if (emp.generalTarget !== false && !ex.general) missingItems.push('일반검진');
+      const hasHazards = emp.hazards && emp.hazards !== 'X';
+      if (hasHazards && !ex.periodic) missingItems.push('정기특검');
+      if (ex.prePlacement && getExamStatus(ex.prePlacement) === 'done' && !ex.postPlacement) missingItems.push('배치후');
+      const examType = missingItems.length ? missingItems.join(', ') + ' 미입력' : '검진 임박';
+      // D-day: 가장 임박한 날짜 기준
+      const nearestDate = [ex.general, ex.postPlacement, ex.periodic]
+        .filter(d => d && getExamStatus(d) !== 'done')
+        .map(d => ymToDate(d)).filter(Boolean)
+        .sort((a, b) => a - b)[0];
+      const days = nearestDate
+        ? `D-${Math.ceil((nearestDate - TODAY) / 86400000)}`
+        : '미입력';
       return `<tr onclick="openEmpModal('${emp.id}')">
         <td><span class="emp-name-cell">${emp.name}</span></td>
         <td><span class="tag-dept">${emp.dept}</span></td>
@@ -1166,14 +1200,14 @@ function renderDashboard() {
 function renderDeptChart() {
   const depts = {};
   G.employees.filter(e => !e.status || e.status === 'active').forEach(emp => {
-    const d = emp.dept || '미분류';
+    const d = (emp.dept || '미분류').replace(/\(\d+\)$/, '').trim();
     if (!depts[d]) depts[d] = { total: 0, done: 0 };
     depts[d].total++;
     if (getEmpOverallStatus(emp) === 'done') depts[d].done++;
   });
 
   const el = document.getElementById('dept-chart');
-  el.innerHTML = Object.entries(depts).sort((a,b) => b[1].total - a[1].total).slice(0,10)
+  el.innerHTML = Object.entries(depts).sort((a,b) => a[0].localeCompare(b[0], 'ko')).slice(0,10)
     .map(([name, v]) => {
       const pct = v.total ? Math.round(v.done/v.total*100) : 0;
       return `<div class="dept-row">
@@ -1571,7 +1605,7 @@ function fillFormDatalist() {
 function openEmpForm() {
   _editingId = null;
   document.getElementById('form-modal-title').textContent = '직원 추가';
-  ['id','name','dept','jobtype','jobtask','hiredate','special','hazard'].forEach(f => document.getElementById('f-'+f).value = '');
+  ['id','name','dept','jobtype','jobtask','hiredate','hazard'].forEach(f => document.getElementById('f-'+f).value = '');
   document.getElementById('f-gender').value    = '';
   document.getElementById('f-night').value     = 'N';
   document.getElementById('f-general').value   = 'Y';
@@ -1599,7 +1633,6 @@ function openEmpFormEdit() {
   document.getElementById('f-healthcert').value = emp.healthCert   ? 'Y' : 'N';
   document.getElementById('f-leavedate').value  = emp.leaveDate     || '';
   document.getElementById('f-resigndate').value = emp.resignDate    || '';
-  document.getElementById('f-special').value    = emp.specialItems  || '';
   document.getElementById('f-hazard').value     = emp.hazards       || '';
   buildExamFormFields(emp);
   closeEmpModal();
@@ -1654,7 +1687,6 @@ function saveEmpForm() {
     healthCert:    document.getElementById('f-healthcert').value === 'Y',
     leaveDate:     document.getElementById('f-leavedate').value.trim(),
     resignDate:    document.getElementById('f-resigndate').value.trim(),
-    specialItems:  document.getElementById('f-special').value.trim(),
     hazards:       document.getElementById('f-hazard').value.trim(),
     exams
   };
@@ -1765,10 +1797,14 @@ function runAutoGenerate() {
       newEx.postPlacement = shiftYear(prevEx.postPlacement, targetYr);
     }
 
-    if (emp.specialItems && emp.specialItems !== 'X') {
-      newEx.periodic = prevEx.periodic
-        ? shiftYear(prevEx.periodic, targetYr)
-        : (targetYrStr.slice(-2) + '.04');
+    if ((emp.hazards && emp.hazards !== 'X') || (emp.specialItems && emp.specialItems !== 'X')) {
+      if (prevEx.periodic) {
+        newEx.periodic = shiftYear(prevEx.periodic, targetYr);
+      } else if (newEx.postPlacement) {
+        newEx.periodic = addMonths(newEx.postPlacement, 12);
+      } else {
+        newEx.periodic = targetYrStr.slice(-2) + '.04';
+      }
     }
 
     results.push({ ...emp, exams: { ...emp.exams, [targetYrStr.slice(-2)]: newEx } });
@@ -1869,8 +1905,7 @@ function renderReport() {
   list.forEach(emp => {
     targetYears.forEach(y => {
       const ex = emp.exams[y] || {};
-      const hasSpecial = (emp.specialItems && emp.specialItems !== 'X') ||
-                         (emp.hazards && emp.hazards !== 'X');
+      const hasSpecial = (emp.hazards && emp.hazards !== 'X') || (emp.specialItems && emp.specialItems !== 'X');
 
       // 완료율 집계 (날짜 있는 항목만)
       [ex.general, ex.prePlacement, ex.postPlacement, ex.periodic].filter(Boolean).forEach(ym => {
@@ -1921,13 +1956,13 @@ function renderReport() {
   // 부서별 막대
   const depts = {};
   list.forEach(emp => {
-    const d = emp.dept || '미분류';
+    const d = (emp.dept || '미분류').replace(/\(\d+\)$/, '').trim();
     if (!depts[d]) depts[d] = { total: 0, done: 0 };
     depts[d].total++;
     if (getEmpOverallStatus(emp) === 'done') depts[d].done++;
   });
   document.getElementById('report-dept-bars').innerHTML = Object.entries(depts)
-    .sort((a,b) => b[1].total - a[1].total)
+    .sort((a,b) => a[0].localeCompare(b[0], 'ko'))
     .map(([name, v]) => {
       const pct = v.total ? Math.round(v.done/v.total*100) : 0;
       return `<div class="dept-row">
@@ -2018,21 +2053,21 @@ function loadSampleData() {
   const py = String(cy-1).padStart(2,'0');
 
   const sample = [
-    {id:'E001',name:'김민준',dept:'생산1파트',jobType:'생산기술직',jobTask:'',gender:'남',hireDate:'2021-03-15',healthCert:false,generalTarget:true,isNight:true,specialItems:'소음, 용접',hazards:'야간, 소음, 용접흄',
+    {id:'E001',name:'김민준',dept:'생산1파트',jobType:'생산기술직',jobTask:'',gender:'남',hireDate:'2021-03-15',healthCert:false,generalTarget:true,isNight:true,hazards:'야간, 소음, 용접흄',
      exams:{[py]:{general:py+'.04',prePlacement:py+'.03',postPlacement:py+'.09',periodic:py+'.05'}}},
-    {id:'E002',name:'이서연',dept:'품질안전파트',jobType:'생산직',jobTask:'QC',gender:'여',hireDate:'2020-07-01',healthCert:true,generalTarget:true,isNight:false,specialItems:'메탄올, 클로로포름',hazards:'메탄올, 클로로포름',
+    {id:'E002',name:'이서연',dept:'품질안전파트',jobType:'생산직',jobTask:'QC',gender:'여',hireDate:'2020-07-01',healthCert:true,generalTarget:true,isNight:false,hazards:'메탄올, 클로로포름',
      exams:{[py]:{general:py+'.'+pm,prePlacement:'',postPlacement:'',periodic:py+'.'+pm}}},
-    {id:'E003',name:'박도현',dept:'설비파트',jobType:'생산기술직',jobTask:'',gender:'남',hireDate:'2019-11-20',healthCert:false,generalTarget:true,isNight:true,specialItems:'망간, 니켈',hazards:'야간, 망간, 니켈, 알루미늄',
+    {id:'E003',name:'박도현',dept:'설비파트',jobType:'생산기술직',jobTask:'',gender:'남',hireDate:'2019-11-20',healthCert:false,generalTarget:true,isNight:true,hazards:'야간, 망간, 니켈, 알루미늄',
      exams:{[py]:{general:py+'.03',prePlacement:'',postPlacement:'',periodic:py+'.04'}}},
-    {id:'E004',name:'최지우',dept:'생산2파트',jobType:'생산직',jobTask:'배합',gender:'여',hireDate:'2022-01-10',healthCert:false,generalTarget:true,isNight:false,specialItems:'소음, 곡물분진',hazards:'소음, 곡물분진',
+    {id:'E004',name:'최지우',dept:'생산2파트',jobType:'생산직',jobTask:'배합',gender:'여',hireDate:'2022-01-10',healthCert:false,generalTarget:true,isNight:false,hazards:'소음, 곡물분진',
      exams:{[py]:{general:py+'.'+nm,prePlacement:'',postPlacement:'',periodic:py+'.'+nm}}},
-    {id:'E005',name:'정현우',dept:'안전보건환경파트',jobType:'생산직',jobTask:'',gender:'남',hireDate:'2018-05-03',healthCert:false,generalTarget:true,isNight:false,specialItems:'알루미늄, 황화수소',hazards:'알루미늄 및 그 화합물, 황화수소',
+    {id:'E005',name:'정현우',dept:'안전보건환경파트',jobType:'생산직',jobTask:'',gender:'남',hireDate:'2018-05-03',healthCert:false,generalTarget:true,isNight:false,hazards:'알루미늄 및 그 화합물, 황화수소',
      exams:{[py]:{general:py+'.02',prePlacement:py+'.02',postPlacement:py+'.08',periodic:py+'.02'}}},
-    {id:'E006',name:'강수민',dept:'생산3파트',jobType:'생산기술직',jobTask:'',gender:'여',hireDate:'2023-08-14',healthCert:false,generalTarget:true,isNight:true,specialItems:'소음, 메탄올',hazards:'야간, 소음, 메탄올',
+    {id:'E006',name:'강수민',dept:'생산3파트',jobType:'생산기술직',jobTask:'',gender:'여',hireDate:'2023-08-14',healthCert:false,generalTarget:true,isNight:true,hazards:'야간, 소음, 메탄올',
      exams:{[py]:{general:py+'.06',prePlacement:py+'.08',postPlacement:py+'.'+String(parseInt(pm)+2>12?parseInt(pm)-10:parseInt(pm)+2).padStart(2,'0'),periodic:py+'.06'}}},
-    {id:'E007',name:'윤지호',dept:'생산1파트',jobType:'생산직',jobTask:'성형',gender:'남',hireDate:'2017-02-28',healthCert:false,generalTarget:true,isNight:false,specialItems:'소음, 곡물분진',hazards:'소음, 곡물분진',
+    {id:'E007',name:'윤지호',dept:'생산1파트',jobType:'생산직',jobTask:'성형',gender:'남',hireDate:'2017-02-28',healthCert:false,generalTarget:true,isNight:false,hazards:'소음, 곡물분진',
      exams:{[py]:{general:py+'.04',prePlacement:'',postPlacement:'',periodic:py+'.04'}}},
-    {id:'E008',name:'임수진',dept:'품질안전파트',jobType:'사무전문직',jobTask:'',gender:'여',hireDate:'2020-09-01',healthCert:false,generalTarget:true,isNight:false,specialItems:'X',hazards:'X',
+    {id:'E008',name:'임수진',dept:'품질안전파트',jobType:'사무전문직',jobTask:'',gender:'여',hireDate:'2020-09-01',healthCert:false,generalTarget:true,isNight:false,hazards:'X',
      exams:{[py]:{general:py+'.04',prePlacement:'',postPlacement:'',periodic:''}}},
   ];
 
@@ -2065,8 +2100,10 @@ function downloadTemplate() {
     ['■ 작성 규칙'],
     ['· 2행이 실제 헤더입니다. 1행(이 안내문)은 삭제해도 됩니다.'],
     ['· 날짜는 YY.MM 형식으로 입력하세요. 예) 26.05 = 2026년 5월'],
+    ['· 날짜란에는 실제 수검 완료한 연월을 입력하세요. 시스템이 오늘 날짜 기준으로 과거 날짜 → 완료, 미래 날짜 → 예정으로 자동 판단합니다.'],
+    ['· 아직 받지 않은 검진은 예정 연월을 입력하세요. 예) 26.09 = 2026년 9월 예정'],
     ['· O/X 항목은 대문자 O 또는 X로 입력하세요.'],
-    ['· 유해인자가 없는 직원은 특수항목·유해인자란에 X를 입력하세요.'],
+    ['· 유해인자가 없는 직원은 유해인자란에 X를 입력하세요.'],
     [],
     ['■ 컬럼 설명'],
     ['사번', '직원 고유번호 (없으면 빈칸)'],
@@ -2079,8 +2116,7 @@ function downloadTemplate() {
     ['보건증', '보건증 필요 여부: O / X'],
     ['일반검진대상', '일반검진 대상 여부: O / X'],
     ['야간', '야간근무 여부: O / X'],
-    ['특수항목', '특수검진 항목 (없으면 X)'],
-    ['유해인자', '노출 유해인자 목록 (없으면 X)'],
+    ['유해인자', '노출 유해인자 목록 (없으면 X). 예) 야간, 소음, 용접흄'],
     ['24년~26년 컬럼', '기존 검진 이력 (없으면 빈칸, YY.MM 형식)'],
   ];
   const wsGuide = XLSX.utils.aoa_to_sheet(guide);
@@ -2088,14 +2124,12 @@ function downloadTemplate() {
   XLSX.utils.book_append_sheet(wb, wsGuide, '작성안내');
 
   // ── 데이터 시트 ──
-  const headers1 = ['No','사번','부서','직군','직무','성명','입사일','성별','보건증','일반검진대상','야간','특수항목','유해인자','23년','24년','','','','25년','','','','26년','','',''];
-  const headers2 = ['','','','','','','','','','','','','','','보건증+일검','배치전','배치후','정기특검','보건증+일검','배치전','배치후','정기특검','보건증+일검','배치전','배치후','정기특검'];
-  const sample1  = [1,'E001','생산1파트','생산기술직','','홍길동','2021-03-15','남','X','O','O','소음, 용접','야간, 소음, 용접흄','','24.04','','','24.05','25.04','','','25.05','26.04','','','26.05'];
-  const sample2  = [2,'E002','품질안전파트','생산직','QC','김영희','2020-07-01','여','O','O','X','메탄올, 클로로포름','메탄올, 클로로포름','','24.07','','','24.07','25.07','','','25.07','26.07','','','26.07'];
-  const sample3  = [3,'','사무동','사무전문직','','이철수','2019-05-20','남','X','O','X','X','X','','24.04','','','','25.04','','','','26.04','','',''];
+  const headers1 = ['No','사번','부서','직군','직무','성명','입사일','성별','보건증','일반검진대상','야간','유해인자','23년','24년','','','','25년','','','','26년','','',''];
+  const headers2 = ['','','','','','','','','','','','','','보건증+일검','배치전','배치후','정기특검','보건증+일검','배치전','배치후','정기특검','보건증+일검','배치전','배치후','정기특검'];
+  const sample1  = [1,'E001','생산1파트','생산기술직','','홍길동','2021-03-15','남','X','O','O','야간, 소음, 용접흄','','24.04','24.03','24.09','','25.09','','','25.09','26.09','','','26.09'];
 
-  const ws = XLSX.utils.aoa_to_sheet([headers1, headers2, sample1, sample2, sample3]);
-  ws['!cols'] = Array(26).fill({wch:12});
+  const ws = XLSX.utils.aoa_to_sheet([headers1, headers2, sample1]);
+  ws['!cols'] = Array(25).fill({wch:12});
   ws['!cols'][2] = {wch:16};
   ws['!cols'][5] = {wch:10};
   XLSX.utils.book_append_sheet(wb, ws, '건강검진현황');
