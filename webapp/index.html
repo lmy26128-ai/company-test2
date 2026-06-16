@@ -8,231 +8,243 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --primary:#1a3a5c;--primary-light:#2d6a9f;--primary-bg:#e8f0fe;
-  --danger:#dc2626;--danger-bg:#fef2f2;--danger-light:#fee2e2;
-  --warn:#d97706;--warn-bg:#fffbeb;--warn-light:#fef3c7;
-  --success:#16a34a;--success-bg:#f0fdf4;--success-light:#dcfce7;
-  --gray:#6b7280;--gray-bg:#f9fafb;--border:#e5e7eb;
-  --white:#ffffff;--text:#111827;--text-sub:#6b7280;
+  --primary:#0f3d8c;--primary-light:#1a5abf;--primary-mid:#1850a8;--primary-bg:#e8f0fd;
+  --danger:#c0392b;--danger-bg:#fdf2f1;--danger-light:#fde8e6;
+  --warn:#c05c0a;--warn-bg:#fff8f0;--warn-light:#fdecd6;
+  --success:#147a40;--success-bg:#edfaf3;--success-light:#d4f5e3;
+  --gray:#64748b;--gray-bg:#f8fafc;--border:#dde3ec;
+  --white:#ffffff;--text:#0f172a;--text-sub:#64748b;
+  --header-bg:#0c2d6b;--surface:#f0f4f9;
 }
-body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0f2f5;color:var(--text);min-height:100vh}
+body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:var(--surface);color:var(--text);min-height:100vh}
 
 /* ── 헤더 ── */
-#app-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);position:sticky;top:0;z-index:100}
-#app-header h1{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:8px}
-#company-name-tag{font-size:.8rem;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;margin-left:8px;font-weight:400}
-#header-nav{display:flex;gap:4px}
-.nav-btn{background:transparent;border:none;color:rgba(255,255,255,.75);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;font-family:inherit;font-weight:500;transition:.15s}
-.nav-btn:hover,.nav-btn.active{background:rgba(255,255,255,.2);color:#fff}
+#app-header{background:var(--header-bg);color:#fff;padding:0 32px;height:66px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:3px solid #2a7bff;box-shadow:0 2px 16px rgba(12,45,107,.4)}
+#app-header h1{font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:10px;letter-spacing:-.2px}
+#app-header h1::before{content:'';display:inline-block;width:4px;height:22px;background:#4da3ff;border-radius:2px;flex-shrink:0}
+#company-name-tag{font-size:.76rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);padding:3px 10px;border-radius:4px;margin-left:6px;font-weight:400;letter-spacing:0}
+#header-nav{display:flex;gap:0}
+.nav-btn{background:transparent;border:none;color:rgba(255,255,255,.6);padding:8px 18px;border-radius:0;cursor:pointer;font-size:.87rem;font-family:inherit;font-weight:500;transition:.15s;border-bottom:3px solid transparent;margin-bottom:-3px;position:relative;bottom:-3px}
+.nav-btn:hover{color:#fff;background:rgba(255,255,255,.07)}
+.nav-btn.active{color:#fff;border-bottom-color:#4da3ff;font-weight:700}
 #header-actions{display:flex;gap:8px;align-items:center}
-#btn-upload-new{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:inherit}
-#btn-upload-new:hover{background:rgba(255,255,255,.25)}
+#btn-upload-new{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.88);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:inherit;transition:.15s}
+#btn-upload-new:hover{background:rgba(255,255,255,.18)}
 
 /* ── 페이지 컨테이너 ── */
-.page{display:none;min-height:calc(100vh - 60px)}
+.page{display:none;min-height:calc(100vh - 66px)}
 .page.active{display:block}
-.container{max-width:1100px;margin:0 auto;padding:28px 20px}
+.container{max-width:1180px;margin:0 auto;padding:28px 28px}
 
 /* ══════════════════════════════════
    업로드 페이지
 ══════════════════════════════════ */
-#page-upload{background:linear-gradient(160deg,#f0f4ff 0%,#f8fafc 100%);display:flex;align-items:center;justify-content:center}
-.upload-wrap{text-align:center;max-width:520px;padding:20px}
-.upload-icon{font-size:3.5rem;margin-bottom:20px}
-.upload-wrap h2{font-size:1.6rem;font-weight:700;color:var(--primary);margin-bottom:10px}
-.upload-wrap p{color:var(--text-sub);font-size:.95rem;margin-bottom:32px;line-height:1.6}
-.drop-zone{border:2.5px dashed #93c5fd;border-radius:16px;padding:48px 32px;background:#fff;cursor:pointer;transition:.2s;position:relative}
-.drop-zone:hover,.drop-zone.drag{border-color:var(--primary-light);background:#eff6ff}
+#page-upload{background:linear-gradient(160deg,#e8f0fd 0%,#f2f6fb 100%);align-items:center;justify-content:center}
+#page-upload.active{display:flex!important}
+.upload-wrap{text-align:center;max-width:540px;padding:20px}
+.upload-icon{font-size:3.5rem;margin-bottom:16px}
+.upload-wrap h2{font-size:1.65rem;font-weight:800;color:var(--primary);margin-bottom:10px;letter-spacing:-.5px}
+.upload-wrap p{color:var(--text-sub);font-size:.94rem;margin-bottom:28px;line-height:1.65}
+.drop-zone{border:2px dashed #93b8f0;border-radius:12px;padding:44px 32px;background:#fff;cursor:pointer;transition:.2s;position:relative;box-shadow:0 1px 4px rgba(15,61,140,.06)}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--primary-light);background:#f0f6ff}
 .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;pointer-events:none}
-.drop-zone .dz-icon{font-size:2.5rem;margin-bottom:12px}
-.drop-zone .dz-text{font-size:1rem;font-weight:600;color:var(--primary);margin-bottom:6px}
+.drop-zone .dz-icon{font-size:2.4rem;margin-bottom:10px}
+.drop-zone .dz-text{font-size:1rem;font-weight:700;color:var(--primary);margin-bottom:5px}
 .drop-zone .dz-sub{font-size:.8rem;color:var(--text-sub)}
-.privacy-note{margin-top:20px;padding:12px 16px;background:#f0fdf4;border-radius:8px;font-size:.82rem;color:#166534;display:flex;align-items:center;gap:8px}
-.sample-btn{margin-top:12px;background:transparent;border:1.5px solid var(--border);color:var(--text-sub);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:.85rem;font-family:inherit}
+.privacy-note{margin-top:18px;padding:12px 16px;background:#edfaf3;border-radius:8px;font-size:.82rem;color:#145a31;display:flex;align-items:center;gap:8px;border-left:3px solid var(--success)}
+.sample-btn{margin-top:12px;background:transparent;border:1.5px solid var(--border);color:var(--text-sub);padding:8px 20px;border-radius:7px;cursor:pointer;font-size:.85rem;font-family:inherit;transition:.15s}
 .sample-btn:hover{border-color:var(--primary-light);color:var(--primary-light)}
-.how-to-steps{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;text-align:left}
-.how-step{display:flex;align-items:flex-start;gap:14px;background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.step-num{width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;font-size:.85rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.how-to-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;text-align:left}
+.how-step{display:flex;align-items:flex-start;gap:14px;background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,61,140,.06);border-left:4px solid #c8d9f5;transition:.15s}
+.how-step:hover{border-left-color:var(--primary-light)}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;font-size:.82rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
 .step-title{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px}
-.step-desc{font-size:.8rem;color:var(--text-sub);line-height:1.5}
-.template-btn{width:100%;background:linear-gradient(90deg,#1a3a5c,#2d6a9f);color:#fff;border:none;border-radius:10px;padding:13px;font-size:.95rem;font-family:inherit;font-weight:700;cursor:pointer;margin-bottom:14px;transition:.15s;letter-spacing:.2px}
-.template-btn:hover{opacity:.9}
+.step-desc{font-size:.8rem;color:var(--text-sub);line-height:1.55}
+.template-btn{width:100%;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:14px;font-size:.95rem;font-family:inherit;font-weight:700;cursor:pointer;margin-bottom:14px;transition:.15s;letter-spacing:.3px;box-shadow:0 4px 12px rgba(15,61,140,.25)}
+.template-btn:hover{background:var(--primary-mid)}
 
 /* ══════════════════════════════════
    대시보드
 ══════════════════════════════════ */
-.alert-banner{border-radius:10px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:.15s}
+.alert-banner{border-radius:8px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:.15s;border:1px solid transparent}
 .alert-banner:hover{filter:brightness(.97)}
-.alert-banner.danger{background:var(--danger-light);border-left:4px solid var(--danger)}
-.alert-banner.warn{background:var(--warn-light);border-left:4px solid var(--warn)}
-.alert-banner .ab-left{display:flex;align-items:center;gap:10px;font-weight:600;font-size:.92rem}
-.alert-banner.danger .ab-left{color:#991b1b}
-.alert-banner.warn .ab-left{color:#92400e}
-.alert-banner .ab-count{background:#fff;border-radius:20px;padding:2px 10px;font-size:.8rem;font-weight:700}
+.alert-banner.danger{background:var(--danger-light);border-color:#f5c6c2;border-left:4px solid var(--danger)}
+.alert-banner.warn{background:var(--warn-light);border-color:#f5dbb8;border-left:4px solid var(--warn)}
+.alert-banner .ab-left{display:flex;align-items:center;gap:10px;font-weight:700;font-size:.9rem}
+.alert-banner.danger .ab-left{color:#7f1d1d}
+.alert-banner.warn .ab-left{color:#7c2d12}
+.alert-banner .ab-count{background:#fff;border-radius:4px;padding:2px 10px;font-size:.8rem;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .alert-banner.danger .ab-count{color:var(--danger)}
 .alert-banner.warn .ab-count{color:var(--warn)}
-.alert-banner .ab-arrow{font-size:.85rem;opacity:.6}
+.alert-banner .ab-arrow{font-size:.85rem;opacity:.5}
 
 .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}
-.summary-card{background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 1px 6px rgba(0,0,0,.07);border-left:4px solid transparent;transition:.15s;cursor:default}
-.summary-card:hover{box-shadow:0 3px 12px rgba(0,0,0,.1)}
-.summary-card.total{border-color:var(--primary-light)}
-.summary-card.danger{border-color:var(--danger)}
-.summary-card.warn{border-color:var(--warn)}
-.summary-card.success{border-color:var(--success)}
-.sc-label{font-size:.75rem;font-weight:600;color:var(--text-sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
-.sc-value{font-size:2rem;font-weight:800;line-height:1}
+.summary-card{background:#fff;border-radius:10px;padding:20px 22px;box-shadow:0 1px 4px rgba(15,61,140,.08);border-top:3px solid transparent;transition:.15s;cursor:default}
+.summary-card:hover{box-shadow:0 4px 14px rgba(15,61,140,.13);transform:translateY(-1px)}
+.summary-card.total{border-top-color:var(--primary)}
+.summary-card.danger{border-top-color:var(--danger)}
+.summary-card.warn{border-top-color:var(--warn)}
+.summary-card.success{border-top-color:var(--success)}
+.sc-label{font-size:.72rem;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.sc-value{font-size:2.1rem;font-weight:800;line-height:1;letter-spacing:-.5px}
 .summary-card.total .sc-value{color:var(--primary)}
 .summary-card.danger .sc-value{color:var(--danger)}
 .summary-card.warn .sc-value{color:var(--warn)}
 .summary-card.success .sc-value{color:var(--success)}
-.sc-sub{font-size:.78rem;color:var(--text-sub);margin-top:5px}
+.sc-sub{font-size:.76rem;color:var(--text-sub);margin-top:6px}
 
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.section-title{font-size:.95rem;font-weight:700;color:var(--text)}
-.section-link{font-size:.82rem;color:var(--primary-light);cursor:pointer;text-decoration:none}
+.section-title{font-size:.95rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';display:inline-block;width:3px;height:16px;background:var(--primary);border-radius:2px}
+.section-link{font-size:.82rem;color:var(--primary-light);cursor:pointer;text-decoration:none;font-weight:600}
 .section-link:hover{text-decoration:underline}
 
 .urgent-table{width:100%;border-collapse:collapse;font-size:.87rem}
-.urgent-table thead tr{background:#f8fafc}
-.urgent-table th{padding:9px 12px;text-align:left;font-weight:600;color:var(--text-sub);font-size:.78rem;border-bottom:2px solid var(--border)}
-.urgent-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
-.urgent-table tr:hover td{background:#fafbfc}
+.urgent-table thead tr{background:#f4f7fb}
+.urgent-table th{padding:9px 14px;text-align:left;font-weight:700;color:var(--text-sub);font-size:.75rem;border-bottom:2px solid var(--border);letter-spacing:.3px;text-transform:uppercase}
+.urgent-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.urgent-table tr:hover td{background:#f8fafc}
 .urgent-table tr:last-child td{border-bottom:none}
 
-.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap}
-.status-badge.danger{background:var(--danger-light);color:var(--danger)}
-.status-badge.warn{background:var(--warn-light);color:var(--warn)}
-.status-badge.success{background:var(--success-light);color:var(--success)}
-.status-badge.neutral{background:#f3f4f6;color:var(--gray)}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:4px;font-size:.75rem;font-weight:700;white-space:nowrap;letter-spacing:.2px}
+.status-badge.danger{background:var(--danger-light);color:var(--danger);border:1px solid #f5c6c2}
+.status-badge.warn{background:var(--warn-light);color:var(--warn);border:1px solid #f5dbb8}
+.status-badge.success{background:var(--success-light);color:var(--success);border:1px solid #b6e8cc}
+.status-badge.neutral{background:#f1f5f9;color:var(--gray);border:1px solid #e2e8f0}
 
-.card-box{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:20px}
+.card-box{background:#fff;border-radius:10px;padding:22px 24px;box-shadow:0 1px 4px rgba(15,61,140,.07);margin-bottom:20px;border:1px solid rgba(0,0,0,.04)}
 
 /* ══════════════════════════════════
    직원 조회
 ══════════════════════════════════ */
-.search-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-.search-bar input{flex:1;min-width:200px;border:1.5px solid var(--border);border-radius:8px;padding:9px 14px;font-size:.92rem;font-family:inherit;outline:none;transition:.2s}
-.search-bar input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(45,106,159,.1)}
-.search-bar select{border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.88rem;font-family:inherit;outline:none;color:var(--text);background:#fff;cursor:pointer}
+.search-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.search-bar input{flex:1;min-width:200px;border:1.5px solid var(--border);border-radius:7px;padding:9px 14px;font-size:.9rem;font-family:inherit;outline:none;transition:.2s;background:#fff}
+.search-bar input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(26,90,191,.1)}
+.search-bar select{border:1.5px solid var(--border);border-radius:7px;padding:9px 12px;font-size:.85rem;font-family:inherit;outline:none;color:var(--text);background:#fff;cursor:pointer;transition:.2s}
 .search-bar select:focus{border-color:var(--primary-light)}
-.btn-primary{background:var(--primary-light);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:.9rem;font-family:inherit;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
-.btn-primary:hover{background:var(--primary)}
-.btn-outline{background:#fff;color:var(--primary-light);border:1.5px solid var(--primary-light);border-radius:8px;padding:9px 18px;font-size:.88rem;font-family:inherit;font-weight:600;cursor:pointer;transition:.15s}
+.btn-primary{background:var(--primary);color:#fff;border:none;border-radius:7px;padding:9px 20px;font-size:.88rem;font-family:inherit;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap;letter-spacing:.2px}
+.btn-primary:hover{background:var(--primary-mid)}
+.btn-outline{background:#fff;color:var(--primary);border:1.5px solid var(--primary);border-radius:7px;padding:9px 18px;font-size:.86rem;font-family:inherit;font-weight:700;cursor:pointer;transition:.15s}
 .btn-outline:hover{background:var(--primary-bg)}
 
-.emp-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.emp-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(15,61,140,.06)}
 .emp-table{width:100%;border-collapse:collapse;font-size:.86rem}
-.emp-table thead tr{background:#f0f4f8}
-.emp-table th{padding:10px 13px;text-align:left;font-weight:700;color:#445;font-size:.78rem;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
-.emp-table th:hover{background:#e8ecf0}
-.emp-table td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:middle}
+.emp-table thead tr{background:var(--primary)}
+.emp-table th{padding:11px 14px;text-align:left;font-weight:700;color:#fff;font-size:.77rem;border-bottom:none;white-space:nowrap;cursor:pointer;user-select:none;letter-spacing:.3px}
+.emp-table th:hover{background:var(--primary-mid)}
+.emp-table td{padding:10px 14px;border-bottom:1px solid #edf1f7;vertical-align:middle}
+.emp-table tbody tr:nth-child(even) td{background:#fafcff}
 .emp-table tr:last-child td{border-bottom:none}
-.emp-table tr:hover td{background:#fafbfc;cursor:pointer}
-.emp-name-cell{font-weight:600;color:var(--text)}
+.emp-table tbody tr:hover td{background:#eef4ff;cursor:pointer}
+.emp-name-cell{font-weight:700;color:var(--text)}
 .emp-id-cell{color:var(--text-sub);font-size:.82rem}
 
-.result-count{font-size:.85rem;color:var(--text-sub);margin-bottom:12px}
+.result-count{font-size:.82rem;color:var(--text-sub);margin-bottom:12px;font-weight:500}
 
 /* 직원 상세 모달 */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay{position:fixed;inset:0;background:rgba(12,30,70,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
 .modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:16px;max-width:780px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.modal-header{background:linear-gradient(90deg,var(--primary),var(--primary-light));color:#fff;padding:18px 24px;border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:space-between}
-.modal-header .emp-name{font-size:1.3rem;font-weight:700}
-.modal-header .emp-meta{font-size:.82rem;opacity:.8;margin-top:3px}
-.modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
-.modal-close:hover{background:rgba(255,255,255,.35)}
-.modal-body{padding:22px 24px}
-.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px}
-.info-item{background:var(--gray-bg);border-radius:8px;padding:10px 14px}
-.info-item .lbl{font-size:.7rem;color:var(--text-sub);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
-.info-item .val{font-size:.92rem;font-weight:600}
+.modal{background:#fff;border-radius:14px;max-width:800px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(12,30,70,.25)}
+.modal-header{background:var(--primary);color:#fff;padding:20px 26px;border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #2a7bff}
+.modal-header .emp-name{font-size:1.25rem;font-weight:800;letter-spacing:-.3px}
+.modal-header .emp-meta{font-size:.82rem;opacity:.75;margin-top:4px}
+.modal-close{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:.15s}
+.modal-close:hover{background:rgba(255,255,255,.28)}
+.modal-body{padding:22px 26px}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:20px}
+.info-item{background:#f6f9fd;border:1px solid #e4eaf4;border-radius:8px;padding:10px 14px}
+.info-item .lbl{font-size:.68rem;color:var(--text-sub);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.info-item .val{font-size:.91rem;font-weight:700;color:var(--text)}
 .hazard-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
-.hazard-tag{background:#e8f0fe;color:#1a56b0;border-radius:6px;padding:4px 10px;font-size:.8rem;font-weight:600}
-.modal-section-title{font-size:.78rem;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
+.hazard-tag{background:#e0eaff;color:#1a3a8a;border-radius:5px;padding:4px 10px;font-size:.79rem;font-weight:700;border:1px solid #c0d4f5}
+.modal-section-title{font-size:.72rem;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.modal-section-title::before{content:'';display:inline-block;width:2px;height:12px;background:var(--primary);border-radius:2px}
 .exam-table{width:100%;border-collapse:collapse;font-size:.84rem}
-.exam-table thead tr{background:#f0f4f8}
-.exam-table th{padding:8px 12px;text-align:center;font-weight:700;color:#445;font-size:.76rem;border-bottom:2px solid var(--border);white-space:nowrap}
+.exam-table thead tr{background:#f4f7fb}
+.exam-table th{padding:9px 13px;text-align:center;font-weight:700;color:#334;font-size:.75rem;border-bottom:2px solid var(--border);white-space:nowrap;letter-spacing:.2px}
 .exam-table th:first-child{text-align:left}
-.exam-table td{padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
-.exam-table td:first-child{text-align:left;font-weight:600;white-space:nowrap}
+.exam-table td{padding:9px 13px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.exam-table td:first-child{text-align:left;font-weight:700;white-space:nowrap}
 .exam-table tr:last-child td{border-bottom:none}
-.year-badge{background:var(--primary-light);color:#fff;border-radius:5px;padding:2px 8px;font-size:.74rem;font-weight:700;display:inline-block}
+.exam-table tbody tr:hover td{background:#f8fafc}
+.year-badge{background:var(--primary);color:#fff;border-radius:4px;padding:2px 9px;font-size:.74rem;font-weight:700;display:inline-block}
 .year-badge.current{background:var(--success)}
-.cell-done{background:var(--success-light);color:#166534;border-radius:5px;padding:2px 8px;font-weight:700;font-size:.8rem;display:inline-block;white-space:nowrap}
-.cell-overdue{background:var(--danger-light);color:var(--danger);border-radius:5px;padding:2px 8px;font-weight:700;font-size:.8rem;display:inline-block;white-space:nowrap;border:1px solid #fca5a5}
-.cell-sched{background:var(--warn-light);color:#92400e;border-radius:5px;padding:2px 8px;font-weight:700;font-size:.8rem;display:inline-block;white-space:nowrap;border:1px solid #fcd34d}
-.cell-empty{color:#d1d5db;font-size:.8rem}
+.cell-done{background:#147a40;color:#fff;border-radius:4px;padding:3px 9px;font-weight:700;font-size:.79rem;display:inline-block;white-space:nowrap}
+.cell-overdue{background:var(--danger);color:#fff;border-radius:4px;padding:3px 9px;font-weight:700;font-size:.79rem;display:inline-block;white-space:nowrap}
+.cell-upcoming{background:#c05c0a;color:#fff;border-radius:4px;padding:3px 9px;font-weight:700;font-size:.79rem;display:inline-block;white-space:nowrap}
+.cell-sched{background:#dbeafe;color:#1e40af;border-radius:4px;padding:3px 9px;font-weight:700;font-size:.79rem;display:inline-block;white-space:nowrap;border:1px solid #bfdbfe}
+.cell-empty{color:#adb5bd;font-size:.84rem}
+.exam-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 14px;background:#f6f9fd;border:1px solid #e4eaf4;border-radius:8px;margin-bottom:12px;font-size:.78rem;color:var(--text-sub)}
+.exam-legend .leg-item{display:flex;align-items:center;gap:5px;font-weight:600}
 
 /* ══════════════════════════════════
    자동생성
 ══════════════════════════════════ */
-.gen-info-box{background:var(--primary-bg);border-radius:10px;padding:16px 20px;margin-bottom:20px;font-size:.88rem;color:var(--primary);line-height:1.7}
+.gen-info-box{background:linear-gradient(135deg,#e8f0fd,#f0f5ff);border:1px solid #c8d9f5;border-left:4px solid var(--primary);border-radius:10px;padding:16px 20px;margin-bottom:20px;font-size:.88rem;color:var(--primary);line-height:1.75}
 .gen-info-box strong{font-weight:700}
 .gen-options{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
 .gen-option{background:#fff;border-radius:10px;padding:18px;border:2px solid var(--border);cursor:pointer;transition:.15s}
 .gen-option:hover{border-color:var(--primary-light)}
-.gen-option.selected{border-color:var(--primary-light);background:var(--primary-bg)}
+.gen-option.selected{border-color:var(--primary);background:var(--primary-bg)}
 .gen-option h4{font-size:.92rem;font-weight:700;margin-bottom:6px}
 .gen-option p{font-size:.8rem;color:var(--text-sub);line-height:1.5}
 .year-selector{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-.year-selector label{font-size:.9rem;font-weight:600}
-.year-selector select{border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.9rem;font-family:inherit;outline:none}
-.preview-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:400px;overflow-y:auto}
-.progress-bar-wrap{background:#e5e7eb;border-radius:20px;height:8px;margin:12px 0}
-.progress-bar{background:linear-gradient(90deg,var(--primary-light),var(--success));height:8px;border-radius:20px;transition:width .3s}
+.year-selector label{font-size:.9rem;font-weight:700;color:var(--text)}
+.year-selector select{border:1.5px solid var(--border);border-radius:7px;padding:8px 12px;font-size:.9rem;font-family:inherit;outline:none}
+.preview-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:420px;overflow-y:auto}
+.progress-bar-wrap{background:#e2e8f0;border-radius:20px;height:7px;margin:12px 0}
+.progress-bar{background:linear-gradient(90deg,var(--primary),#38bdf8);height:7px;border-radius:20px;transition:width .3s}
 
 /* ══════════════════════════════════
    리포트
 ══════════════════════════════════ */
 .report-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px}
-.stat-card{background:#fff;border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.stat-card .st-label{font-size:.75rem;color:var(--text-sub);font-weight:600;margin-bottom:6px}
-.stat-card .st-val{font-size:1.5rem;font-weight:800;color:var(--primary)}
-.dept-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.stat-card{background:#fff;border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(15,61,140,.07);border-top:3px solid var(--primary)}
+.stat-card .st-label{font-size:.73rem;color:var(--text-sub);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.stat-card .st-val{font-size:1.55rem;font-weight:800;color:var(--primary)}
+.dept-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
 .dept-row:last-child{border-bottom:none}
-.dept-name{width:140px;font-size:.87rem;font-weight:600;flex-shrink:0}
-.dept-bar-wrap{flex:1;background:#e5e7eb;border-radius:10px;height:10px}
-.dept-bar{background:linear-gradient(90deg,var(--primary-light),#60a5fa);height:10px;border-radius:10px;transition:width .4s}
+.dept-name{width:140px;font-size:.86rem;font-weight:700;flex-shrink:0}
+.dept-bar-wrap{flex:1;background:#e2e8f0;border-radius:10px;height:9px}
+.dept-bar{background:linear-gradient(90deg,var(--primary),#60a5fa);height:9px;border-radius:10px;transition:width .4s}
 .dept-pct{width:44px;text-align:right;font-size:.83rem;font-weight:700;color:var(--primary)}
 
 /* ══════════════════════════════════
    공통 유틸
 ══════════════════════════════════ */
 .empty-state{text-align:center;padding:56px 20px;color:var(--text-sub)}
-.empty-state .es-icon{font-size:2.8rem;margin-bottom:12px}
-.empty-state p{font-size:.95rem}
-.chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.75rem;font-weight:700}
+.empty-state .es-icon{font-size:2.8rem;margin-bottom:14px;opacity:.6}
+.empty-state p{font-size:.95rem;font-weight:500}
+.chip{display:inline-block;padding:2px 9px;border-radius:4px;font-size:.75rem;font-weight:700;letter-spacing:.1px}
 .chip.ok{background:var(--success-light);color:var(--success)}
-.chip.no{background:#f3f4f6;color:var(--gray)}
+.chip.no{background:#f1f5f9;color:var(--gray)}
 .chip.night{background:var(--warn-light);color:var(--warn)}
-.tag-dept{background:#ede9fe;color:#5b21b6;border-radius:5px;padding:2px 8px;font-size:.78rem;font-weight:600}
+.tag-dept{background:#ede9fe;color:#4c1d95;border-radius:4px;padding:2px 8px;font-size:.77rem;font-weight:700;border:1px solid #ddd6fe}
 .divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 .flex-row{display:flex;align-items:center;gap:10px}
 .ml-auto{margin-left:auto}
 .text-danger{color:var(--danger)}
 .text-warn{color:var(--warn)}
 .text-success{color:var(--success)}
-.toast{position:fixed;bottom:28px;right:28px;background:#1f2937;color:#fff;padding:12px 20px;border-radius:10px;font-size:.88rem;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:999;transform:translateY(20px);opacity:0;transition:.25s;pointer-events:none}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--header-bg);color:#fff;padding:12px 20px;border-radius:8px;font-size:.88rem;box-shadow:0 4px 20px rgba(12,45,107,.35);z-index:999;transform:translateY(20px);opacity:0;transition:.25s;pointer-events:none;border-left:3px solid #4da3ff}
 .toast.show{transform:translateY(0);opacity:1}
-.form-label{display:block;font-size:.75rem;font-weight:600;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
-.form-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.9rem;font-family:inherit;outline:none;transition:.2s;background:#fff}
-.form-input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(45,106,159,.1)}
-.ee-type-btn{display:flex;align-items:center;justify-content:center;padding:10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text-sub);transition:.15s;user-select:none}
+.form-label{display:block;font-size:.72rem;font-weight:700;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:8px 12px;font-size:.9rem;font-family:inherit;outline:none;transition:.2s;background:#fff}
+.form-input:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(26,90,191,.1)}
+.ee-type-btn{display:flex;align-items:center;justify-content:center;padding:10px;border:2px solid var(--border);border-radius:7px;cursor:pointer;font-size:.9rem;font-weight:700;color:var(--text-sub);transition:.15s;user-select:none}
 .ee-type-btn:hover{border-color:var(--primary-light);color:var(--primary-light)}
-.ee-type-btn.selected{border-color:var(--primary-light);background:var(--primary-bg);color:var(--primary)}
+.ee-type-btn.selected{border-color:var(--primary);background:var(--primary-bg);color:var(--primary)}
 .emp-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)}
-.emp-tab{background:transparent;border:none;padding:10px 22px;font-size:.92rem;font-family:inherit;font-weight:600;color:var(--text-sub);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:.15s}
-.emp-tab:hover{color:var(--primary-light)}
-.emp-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
-.tab-count{background:var(--border);color:var(--text-sub);border-radius:20px;padding:1px 8px;font-size:.75rem;font-weight:700;margin-left:6px}
+.emp-tab{background:transparent;border:none;padding:11px 24px;font-size:.9rem;font-family:inherit;font-weight:600;color:var(--text-sub);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:.15s}
+.emp-tab:hover{color:var(--primary)}
+.emp-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
+.tab-count{background:var(--border);color:var(--text-sub);border-radius:4px;padding:1px 7px;font-size:.73rem;font-weight:700;margin-left:6px}
 .emp-tab.active .tab-count{background:var(--primary-bg);color:var(--primary)}
-.resigned-badge{background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 8px;font-size:.78rem;font-weight:700}
+.resigned-badge{background:#fef3c7;color:#78350f;border-radius:4px;padding:2px 8px;font-size:.77rem;font-weight:700;border:1px solid #fde68a}
 
 /* ── 모바일 하단 네비게이션 ── */
-.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);z-index:150;padding-bottom:env(safe-area-inset-bottom)}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid var(--border);z-index:150;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 12px rgba(15,61,140,.1)}
 .mobile-nav-inner{display:flex;justify-content:space-around;padding:6px 0}
 .mnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--text-sub);font-size:.65rem;font-family:inherit;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:8px;min-width:60px;transition:.15s}
 .mnav-btn .mnav-icon{font-size:1.3rem;line-height:1}
@@ -247,36 +259,25 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
   #last-saved-tag{display:none!important}
   .search-bar{flex-direction:column}
   .mobile-nav{display:block}
-
-  /* 페이지 컨테이너 하단 여백 (모바일 nav 높이만큼) */
   .page.active > .container{padding-bottom:80px}
-
-  /* 테이블 → 카드형 변환 */
   .emp-table thead{display:none}
-  .emp-table tbody tr{display:block;background:#fff;border-radius:10px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08);overflow:hidden}
+  .emp-table tbody tr{display:block;background:#fff;border-radius:10px;margin-bottom:10px;box-shadow:0 1px 5px rgba(15,61,140,.1);overflow:hidden}
   .emp-table tbody td{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid #f3f4f6;font-size:.85rem}
   .emp-table tbody td:last-child{border-bottom:none}
   .emp-table tbody td::before{content:attr(data-label);font-size:.72rem;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:.3px;flex-shrink:0;margin-right:10px}
-  .emp-table-wrap{border:none;border-radius:0}
+  .emp-table-wrap{border:none;border-radius:0;box-shadow:none}
   .emp-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .emp-tab{padding:10px 14px;white-space:nowrap}
-
-  /* 모달 모바일 최적화 */
   .modal-overlay{align-items:flex-end;padding:0}
   .modal{border-radius:20px 20px 0 0;max-height:92vh}
   .info-grid{grid-template-columns:1fr 1fr}
-
-  /* 요약 카드 작게 */
-  .sc-value{font-size:1.5rem}
+  .sc-value{font-size:1.55rem}
   .summary-card{padding:14px 16px}
-
-  /* 토스트 위치 (하단 네비 위) */
   .toast{bottom:76px}
-
-  /* 업로드 페이지 */
   .upload-wrap{padding:16px}
   .how-to-steps{gap:8px}
   .how-step{padding:12px}
+  .container{padding:20px 16px}
 }
 </style>
 </head>
@@ -284,7 +285,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
 
 <!-- 헤더 -->
 <header id="app-header" style="display:none">
-  <h1>🏥 건강검진 관리 시스템<span id="company-name-tag"></span></h1>
+  <h1>건강검진 관리 시스템<span id="company-name-tag"></span></h1>
   <nav id="header-nav">
     <button class="nav-btn active" onclick="showPage('dashboard')">대시보드</button>
     <button class="nav-btn" onclick="showPage('employees')">직원 조회</button>
@@ -292,7 +293,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
     <button class="nav-btn" onclick="showPage('report')">리포트</button>
   </nav>
   <div id="header-actions">
-    <span id="last-saved-tag" style="font-size:.75rem;opacity:.7;display:none"></span>
+    <span id="last-saved-tag" style="font-size:.75rem;opacity:.6;display:none"></span>
     <button id="btn-upload-new" onclick="resetApp()">📂 파일 교체</button>
   </div>
 </header>
@@ -428,6 +429,9 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
         <option value="overdue">🔴 누락/초과</option>
         <option value="upcoming">🟠 임박 (30일)</option>
         <option value="done">✅ 완료</option>
+        <option value="new-hire-year">🆕 신규입사 (올해)</option>
+        <option value="new-hire">🆕 신규입사 (12개월)</option>
+        <option value="placement">💉 배치전/배치후 대상</option>
       </select>
       <select id="filter-exam" onchange="renderEmployeeList()">
         <option value="">전체 검진유형</option>
@@ -435,6 +439,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
         <option value="periodic">정기특검</option>
         <option value="healthcert">보건증</option>
       </select>
+      <select id="filter-year" onchange="switchEmpTab(currentEmpTab)" style="font-weight:700;border-color:var(--primary);color:var(--primary)"></select>
       <button class="btn-primary" id="btn-add-emp" onclick="openEmpForm()">＋ 직원 추가</button>
       <button class="btn-outline" onclick="exportEmployeeList()">📥 Excel 내보내기</button>
     </div>
@@ -449,6 +454,15 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <button class="btn-outline" style="padding:4px 12px;font-size:.82rem" onclick="clearBulkSelect()">선택 취소</button>
     </div>
 
+    <div class="exam-legend">
+      <span style="font-weight:700;color:var(--text)">수검 상태</span>
+      <span class="leg-item"><span class="cell-done">✅ 26.04</span> 수검 완료</span>
+      <span class="leg-item"><span class="cell-overdue">❌ 26.04</span> 미수검 / 누락</span>
+      <span class="leg-item"><span class="cell-upcoming">⚠️ 26.04</span> 임박 (30일 이내)</span>
+      <span class="leg-item"><span class="cell-sched">📅 26.04</span> 예정</span>
+      <span class="leg-item"><span class="cell-empty">—</span> 해당 없음</span>
+    </div>
+
     <div class="emp-table-wrap">
       <table class="emp-table">
         <thead>
@@ -456,10 +470,12 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
             <th style="width:36px"><input type="checkbox" id="chk-all" title="전체 선택" onchange="toggleSelectAll(this.checked)"></th>
             <th onclick="sortBy('id')">사번 ↕</th>
             <th onclick="sortBy('name')">성명 ↕</th>
-            <th>부서</th>
+            <th onclick="sortBy('dept')">부서 ↕</th>
             <th>직군</th>
             <th>유해인자</th>
             <th onclick="sortBy('general')">일반검진 ↕</th>
+            <th>배치전</th>
+            <th>배치후</th>
             <th onclick="sortBy('periodic')">정기특검 ↕</th>
             <th>야간</th>
             <th>상태</th>
@@ -605,8 +621,8 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="emp-form-fields">
         <div><label class="form-label">사번</label><input class="form-input" id="f-id" placeholder="예) E001"></div>
         <div><label class="form-label">성명 *</label><input class="form-input" id="f-name" placeholder="홍길동"></div>
-        <div><label class="form-label">부서</label><input class="form-input" id="f-dept" list="dl-dept" placeholder="부서 선택 또는 직접 입력" autocomplete="off"><datalist id="dl-dept"></datalist></div>
-        <div><label class="form-label">직군</label><input class="form-input" id="f-jobtype" list="dl-jobtype" placeholder="직군 선택 또는 직접 입력" autocomplete="off"><datalist id="dl-jobtype"></datalist></div>
+        <div><label class="form-label">부서</label><input class="form-input" id="f-dept" list="dl-dept" placeholder="예) 생산1파트" autocomplete="off"><datalist id="dl-dept"></datalist></div>
+        <div><label class="form-label">직군</label><input class="form-input" id="f-jobtype" list="dl-jobtype" placeholder="예) 생산기술직" autocomplete="off"><datalist id="dl-jobtype"></datalist></div>
         <div><label class="form-label">직무</label><input class="form-input" id="f-jobtask" list="dl-jobtask" placeholder="" autocomplete="off"><datalist id="dl-jobtask"></datalist></div>
         <div><label class="form-label">성별</label>
           <select class="form-input" id="f-gender"><option value="">선택</option><option>남</option><option>여</option></select></div>
@@ -614,7 +630,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:#f0
         <div><label class="form-label">야간근무</label>
           <select class="form-input" id="f-night"><option value="N">아니오</option><option value="Y">예</option></select></div>
         <div><label class="form-label">일반검진 대상</label>
-          <select class="form-input" id="f-general"><option value="Y">예</option><option value="N">아��오</option></select></div>
+          <select class="form-input" id="f-general"><option value="Y">예</option><option value="N">아니오</option></select></div>
         <div><label class="form-label">보건증 필요</label>
           <select class="form-input" id="f-healthcert"><option value="N">아니오</option><option value="Y">예</option></select></div>
         <div><label class="form-label">휴직일 <span style="font-weight:400;text-transform:none">(휴직자만)</span></label><input class="form-input" id="f-leavedate" placeholder="2026-01-01"></div>
@@ -835,7 +851,7 @@ function detectColumns(header, subHeader) {
     gender:        find(header, '성별', '남녀', '남녀구분', 'gender'),
     hireDate:      find(header, '입사일', '입사', 'hire'),
     healthCert:    find(header, '보건증'),
-    generalTarget: find(header, '일반', '일반검진'),
+    generalTarget: find(header, '일반대상', '일반검진대상', '검진대상'),
     isNight:       find(header, '야간'),
     specialItems:  find(header, '특수항목'),
     hazards:       find(header, '유해인자'),
@@ -1032,10 +1048,38 @@ function populateYearSelectors() {
     const o = document.createElement('option'); o.value = y; o.textContent = '20'+y+'년';
     repSel.appendChild(o);
   });
+
+  // 직원 조회 기준 연도 (기본값: 현재 연도, 없으면 최신)
+  const empYrSel = document.getElementById('filter-year');
+  if (empYrSel) {
+    const curYrStr = String(CUR_YEAR).padStart(2, '0');
+    empYrSel.innerHTML = years.map(y =>
+      `<option value="${y}" ${y === curYrStr ? 'selected' : ''}>📅 20${y}년 기준</option>`
+    ).join('');
+    // 현재 연도 옵션이 없으면 최신 연도 선택 유지
+    if (!years.includes(curYrStr) && empYrSel.options.length > 0) {
+      empYrSel.options[empYrSel.options.length - 1].selected = true;
+    }
+  }
+}
+
+// 부서 커스텀 정렬 순서 (키워드 포함 여부로 매칭)
+const DEPT_ORDER_KEYS = ['생산1','생산2','업무','품질','설비','안전보건환경','생산3','3공장','비상계획'];
+function deptSortIdx(dept) {
+  if (!dept) return 999;
+  const d = dept.replace(/\s/g, '');
+  const idx = DEPT_ORDER_KEYS.findIndex(k => d.includes(k));
+  return idx === -1 ? 998 : idx;
+}
+function sortDepts(depts) {
+  return [...depts].sort((a, b) => {
+    const diff = deptSortIdx(a) - deptSortIdx(b);
+    return diff !== 0 ? diff : a.localeCompare(b, 'ko');
+  });
 }
 
 function populateDeptFilters() {
-  const depts = [...new Set(G.employees.map(e => e.dept).filter(Boolean))].sort();
+  const depts = sortDepts([...new Set(G.employees.map(e => e.dept).filter(Boolean))]);
   ['filter-dept','report-dept'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
@@ -1207,7 +1251,9 @@ function renderDeptChart() {
   });
 
   const el = document.getElementById('dept-chart');
-  el.innerHTML = Object.entries(depts).sort((a,b) => a[0].localeCompare(b[0], 'ko')).slice(0,10)
+  el.innerHTML = Object.entries(depts)
+    .sort((a,b) => { const d = deptSortIdx(a[0]) - deptSortIdx(b[0]); return d !== 0 ? d : a[0].localeCompare(b[0],'ko'); })
+    .slice(0,10)
     .map(([name, v]) => {
       const pct = v.total ? Math.round(v.done/v.total*100) : 0;
       return `<div class="dept-row">
@@ -1239,7 +1285,7 @@ function switchEmpTab(tab) {
     thead.innerHTML = chkTh + `
       <th onclick="sortBy('id')">사번 ↕</th>
       <th onclick="sortBy('name')">성명 ↕</th>
-      <th>부서</th><th>직군</th>
+      <th onclick="sortBy('dept')">부서 ↕</th><th>직군</th>
       <th onclick="sortBy('resignDate')">퇴사일 ↕</th>
       <th>유해인자</th>
       <th>마지막 일반검진</th><th>마지막 정기특검</th>`;
@@ -1247,18 +1293,22 @@ function switchEmpTab(tab) {
     thead.innerHTML = chkTh + `
       <th onclick="sortBy('id')">사번 ↕</th>
       <th onclick="sortBy('name')">성명 ↕</th>
-      <th>부서</th><th>직군</th>
+      <th onclick="sortBy('dept')">부서 ↕</th><th>직군</th>
       <th onclick="sortBy('leaveDate')">휴직일 ↕</th>
       <th>유해인자</th>
       <th>마지막 일반검진</th><th>마지막 정기특검</th>`;
   } else {
+    const yrSel = document.getElementById('filter-year');
+    const dispYr = yrSel && yrSel.value ? `20${yrSel.value}` : '';
+    const yrSuffix = dispYr ? ` <span style="font-size:.7rem;font-weight:400;color:#6366f1">(${dispYr})</span>` : '';
     thead.innerHTML = chkTh + `
       <th onclick="sortBy('id')">사번 ↕</th>
       <th onclick="sortBy('name')">성명 ↕</th>
-      <th>부서</th><th>직군</th>
+      <th onclick="sortBy('dept')">부서 ↕</th><th>직군</th>
       <th>유해인자</th>
-      <th onclick="sortBy('general')">일반검진 ↕</th>
-      <th onclick="sortBy('periodic')">정기특검 ↕</th>
+      <th onclick="sortBy('general')">일반검진${yrSuffix} ↕</th>
+      <th>배치전${yrSuffix}</th><th>배치후${yrSuffix}</th>
+      <th onclick="sortBy('periodic')">정기특검${yrSuffix} ↕</th>
       <th>야간</th><th>상태</th>`;
   }
   renderEmployeeList();
@@ -1300,26 +1350,50 @@ function renderEmployeeList() {
     if (q && !emp.name.toLowerCase().includes(q) && !(emp.id||'').toLowerCase().includes(q)) return false;
     if (dept && emp.dept !== dept) return false;
     if (!isSpecial && status) {
-      const s = getEmpOverallStatus(emp);
-      if (status === 'urgent' && s !== 'overdue' && s !== 'upcoming') return false;
-      if (status !== 'urgent' && s !== status) return false;
+      if (status === 'new-hire-year') {
+        const hireDate = emp.hireDate ? new Date(emp.hireDate) : null;
+        if (!hireDate || isNaN(hireDate)) return false;
+        if (hireDate.getFullYear() !== TODAY.getFullYear()) return false;
+      } else if (status === 'new-hire') {
+        const hireDate = emp.hireDate ? new Date(emp.hireDate) : null;
+        if (!hireDate || isNaN(hireDate)) return false;
+        const monthsAgo = (TODAY - hireDate) / (1000 * 60 * 60 * 24 * 30);
+        if (monthsAgo > 12) return false;
+      } else if (status === 'placement') {
+        const hasPlacement = G.years.some(y => emp.exams?.[y]?.prePlacement || emp.exams?.[y]?.postPlacement);
+        if (!hasPlacement) return false;
+      } else {
+        const s = getEmpOverallStatus(emp);
+        if (status === 'urgent' && s !== 'overdue' && s !== 'upcoming') return false;
+        if (status !== 'urgent' && s !== status) return false;
+      }
     }
     return true;
   });
 
-  if (sortKey) {
-    list = list.slice().sort((a, b) => {
-      let va = sortKey === 'name' ? a.name
-             : sortKey === 'id'   ? (a.id||'')
-             : sortKey === 'resignDate' ? (a.resignDate||'')
-             : a.exams[G.years[G.years.length-1]]?.[sortKey] || '';
-      let vb = sortKey === 'name' ? b.name
-             : sortKey === 'id'   ? (b.id||'')
-             : sortKey === 'resignDate' ? (b.resignDate||'')
-             : b.exams[G.years[G.years.length-1]]?.[sortKey] || '';
-      return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
-    });
-  }
+  list = list.slice().sort((a, b) => {
+    // 기본 정렬: 부서 커스텀 순 → 사번
+    if (!sortKey) {
+      const d = deptSortIdx(a.dept) - deptSortIdx(b.dept);
+      return d !== 0 ? d : (a.id||'').localeCompare(b.id||'', 'ko');
+    }
+    if (sortKey === 'dept') {
+      const d = deptSortIdx(a.dept) - deptSortIdx(b.dept);
+      const result = d !== 0 ? d : (a.id||'').localeCompare(b.id||'', 'ko');
+      return sortAsc ? result : -result;
+    }
+    let va = sortKey === 'name' ? a.name
+           : sortKey === 'id'   ? (a.id||'')
+           : sortKey === 'resignDate' ? (a.resignDate||'')
+           : sortKey === 'leaveDate'  ? (a.leaveDate||'')
+           : a.exams[G.years[G.years.length-1]]?.[sortKey] || '';
+    let vb = sortKey === 'name' ? b.name
+           : sortKey === 'id'   ? (b.id||'')
+           : sortKey === 'resignDate' ? (b.resignDate||'')
+           : sortKey === 'leaveDate'  ? (b.leaveDate||'')
+           : b.exams[G.years[G.years.length-1]]?.[sortKey] || '';
+    return sortAsc ? va.localeCompare(vb, 'ko') : vb.localeCompare(va, 'ko');
+  });
 
   const activeTotal   = G.employees.filter(e => !e.status || e.status === 'active').length;
   const leaveTotal    = G.employees.filter(e => e.status === 'leave').length;
@@ -1327,10 +1401,12 @@ function renderEmployeeList() {
   const tabLabel = isResigned ? `퇴사자 전체 ${resignedTotal}` : isLeave ? `휴직자 전체 ${leaveTotal}` : `현직 전체 ${activeTotal}`;
   document.getElementById('emp-result-count').textContent = `${list.length}명 표시 중 (${tabLabel}명)`;
 
-  const latestYear = G.years[G.years.length - 1];
+  const filterYearSel = document.getElementById('filter-year');
+  const selectedYear = (filterYearSel && filterYearSel.value) || G.years[G.years.length - 1];
+  const latestYear = selectedYear;
   const tbody = document.getElementById('emp-tbody');
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-sub)">${isResigned ? '퇴사 처리된 직원이 없습니다.' : '검색 결과가 없습니다.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-sub)">${isResigned ? '퇴사 처리된 직원이 없습니다.' : '검색 결과가 없습니다.'}</td></tr>`;
     return;
   }
 
@@ -1364,8 +1440,10 @@ function renderEmployeeList() {
     }
 
     const ex = emp.exams[latestYear] || {};
-    const gStatus = getExamStatus(ex.general);
-    const pStatus = getExamStatus(ex.periodic);
+    const gStatus  = getExamStatus(ex.general);
+    const preStatus = getExamStatus(ex.prePlacement);
+    const postStatus = getExamStatus(ex.postPlacement);
+    const pStatus  = getExamStatus(ex.periodic);
     const overall = getEmpOverallStatus(emp);
     return `<tr onclick="openEmpModal('${clickId}')">
       ${chkTd}
@@ -1375,6 +1453,8 @@ function renderEmployeeList() {
       <td data-label="직군">${emp.jobType||'—'}</td>
       <td data-label="유해인자" style="max-width:140px;font-size:.78rem">${hazardShort}</td>
       <td data-label="일반검진">${cellDisplay(ex.general, gStatus)}</td>
+      <td data-label="배치전">${cellDisplay(ex.prePlacement, preStatus)}</td>
+      <td data-label="배치후">${cellDisplay(ex.postPlacement, postStatus)}</td>
       <td data-label="정기특검">${cellDisplay(ex.periodic, pStatus)}</td>
       <td data-label="야간">${emp.isNight ? '<span class="chip night">야간</span>' : '<span class="chip no">—</span>'}</td>
       <td data-label="상태">${statusBadge(overall)}</td>
@@ -1431,9 +1511,10 @@ function bulkSetStatus(newStatus) {
 
 function cellDisplay(ym, status) {
   if (!ym) return '<span class="cell-empty">—</span>';
-  if (status === 'overdue') return `<span class="cell-overdue">${ym}</span>`;
-  if (status === 'upcoming') return `<span class="cell-sched">${ym}</span>`;
-  if (status === 'done') return `<span class="cell-done">${ym}</span>`;
+  if (status === 'done')     return `<span class="cell-done">✅ ${ym}</span>`;
+  if (status === 'overdue')  return `<span class="cell-overdue">❌ ${ym}</span>`;
+  if (status === 'upcoming') return `<span class="cell-upcoming">⚠️ ${ym}</span>`;
+  if (status === 'scheduled')return `<span class="cell-sched">📅 ${ym}</span>`;
   return `<span>${ym}</span>`;
 }
 
@@ -1639,25 +1720,88 @@ function openEmpFormEdit() {
   document.getElementById('emp-form-modal').classList.add('open');
 }
 
+let _formYears = [];
+let _formEmp   = null;
+
 function buildExamFormFields(emp) {
-  const years = G.years.length ? G.years : [];
-  if (years.length === 0) { document.getElementById('exam-form-area').innerHTML = ''; return; }
-  const rows = years.map(yr => {
-    const ex = emp?.exams?.[yr] || {};
-    return `<div style="margin-bottom:14px">
-      <div style="font-size:.78rem;font-weight:700;color:var(--primary);margin-bottom:8px;text-transform:uppercase">
-        <span style="background:var(--primary);color:#fff;border-radius:4px;padding:2px 8px">${yr}년</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-        <div><label class="form-label">일반검진</label><input class="form-input" id="fe-${yr}-general" value="${ex.general||''}" placeholder="YY.MM"></div>
-        <div><label class="form-label">배치전</label><input class="form-input" id="fe-${yr}-pre" value="${ex.prePlacement||''}" placeholder="YY.MM"></div>
-        <div><label class="form-label">배치후</label><input class="form-input" id="fe-${yr}-post" value="${ex.postPlacement||''}" placeholder="YY.MM"></div>
-        <div><label class="form-label">정기특검</label><input class="form-input" id="fe-${yr}-periodic" value="${ex.periodic||''}" placeholder="YY.MM"></div>
-      </div>
+  _formEmp   = emp;
+  _formYears = G.years.length ? [...G.years] : [String(CUR_YEAR).padStart(2, '0')];
+  _renderExamFormArea();
+}
+
+function _renderExamFormArea() {
+  const wrap = document.getElementById('exam-form-area');
+  wrap.innerHTML = `
+    <div class="modal-section-title" style="margin-bottom:12px">연도별 검진 날짜</div>
+    <div id="exam-years-container"></div>
+    <div style="margin-top:10px">
+      <select id="add-year-sel" class="form-input" style="width:160px;font-size:.84rem"
+              onchange="addExamYear(this.value);this.value=''">
+        <option value="">＋ 연도 추가...</option>
+      </select>
     </div>`;
-  }).join('');
-  document.getElementById('exam-form-area').innerHTML =
-    `<div class="modal-section-title" style="margin-bottom:12px">연도별 검진 날짜</div>${rows}`;
+  const container = document.getElementById('exam-years-container');
+  _formYears.forEach(yr => container.appendChild(_makeExamYearRow(yr, _formEmp?.exams?.[yr] || {})));
+  _refreshAddYearOptions();
+}
+
+function _makeExamYearRow(yr, ex) {
+  const div = document.createElement('div');
+  div.id = `exam-row-${yr}`;
+  div.style.cssText = 'margin-bottom:12px;background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:12px 14px';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="background:var(--primary);color:#fff;border-radius:4px;padding:2px 10px;font-size:.78rem;font-weight:700">20${yr}년</span>
+      <button type="button" onclick="removeExamYear('${yr}')"
+        style="background:none;border:1px solid #d1d5db;color:#6b7280;font-size:.8rem;cursor:pointer;padding:2px 7px;border-radius:4px;line-height:1.4"
+        title="이 연도 삭제">✕ 삭제</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div><label class="form-label">일반검진</label><input class="form-input" id="fe-${yr}-general" value="${ex.general||''}" placeholder="YY.MM"></div>
+      <div><label class="form-label">배치전</label><input class="form-input" id="fe-${yr}-pre" value="${ex.prePlacement||''}" placeholder="YY.MM"></div>
+      <div><label class="form-label">배치후</label><input class="form-input" id="fe-${yr}-post" value="${ex.postPlacement||''}" placeholder="YY.MM"></div>
+      <div><label class="form-label">정기특검</label><input class="form-input" id="fe-${yr}-periodic" value="${ex.periodic||''}" placeholder="YY.MM"></div>
+    </div>`;
+  return div;
+}
+
+function addExamYear(yr) {
+  if (!yr || _formYears.includes(yr)) return;
+  // 현재 입력값 보존
+  const saved = {};
+  _formYears.forEach(y => {
+    saved[y] = {
+      general:       document.getElementById(`fe-${y}-general`)?.value || '',
+      prePlacement:  document.getElementById(`fe-${y}-pre`)?.value     || '',
+      postPlacement: document.getElementById(`fe-${y}-post`)?.value    || '',
+      periodic:      document.getElementById(`fe-${y}-periodic`)?.value|| '',
+    };
+  });
+  _formYears.push(yr);
+  _formYears.sort();
+  const container = document.getElementById('exam-years-container');
+  container.innerHTML = '';
+  _formYears.forEach(y => container.appendChild(_makeExamYearRow(y, saved[y] || _formEmp?.exams?.[y] || {})));
+  _refreshAddYearOptions();
+}
+
+function removeExamYear(yr) {
+  _formYears = _formYears.filter(y => y !== yr);
+  document.getElementById(`exam-row-${yr}`)?.remove();
+  _refreshAddYearOptions();
+}
+
+function _refreshAddYearOptions() {
+  const sel = document.getElementById('add-year-sel');
+  if (!sel) return;
+  const from = Math.max(CUR_YEAR - 3, 20);
+  const to   = CUR_YEAR + 6;
+  let opts = '<option value="">＋ 연도 추가...</option>';
+  for (let y = from; y <= to; y++) {
+    const s = String(y).padStart(2, '0');
+    if (!_formYears.includes(s)) opts += `<option value="${s}">20${s}년</option>`;
+  }
+  sel.innerHTML = opts;
 }
 
 function saveEmpForm() {
@@ -1665,13 +1809,15 @@ function saveEmpForm() {
   if (!name) { alert('성명은 필수입니다.'); return; }
 
   const exams = {};
-  G.years.forEach(yr => {
+  _formYears.forEach(yr => {
     exams[yr] = {
       general:       document.getElementById(`fe-${yr}-general`)?.value.trim()  || '',
       prePlacement:  document.getElementById(`fe-${yr}-pre`)?.value.trim()      || '',
       postPlacement: document.getElementById(`fe-${yr}-post`)?.value.trim()     || '',
       periodic:      document.getElementById(`fe-${yr}-periodic`)?.value.trim() || ''
     };
+    // 새 연도는 G.years에 추가
+    if (!G.years.includes(yr)) { G.years.push(yr); G.years.sort(); }
   });
 
   const updated = {
@@ -1769,7 +1915,8 @@ function runAutoGenerate() {
     progressBar.style.width = Math.round((i+1)/total*100) + '%';
     progressText.textContent = `처리 중... ${i+1}/${total}`;
 
-    const prevEx = emp.exams[sourceYr] || {};
+    // sourceYr(전년) 데이터 없으면 가장 최근 연도 데이터로 폴백
+    const prevEx = emp.exams[sourceYr] || emp.exams[G.years[G.years.length - 1]] || {};
     const newEx = {
       general: '',
       prePlacement: '',
@@ -1777,34 +1924,52 @@ function runAutoGenerate() {
       periodic: ''
     };
 
-    if (emp.generalTarget) {
-      newEx.general = prevEx.general
-        ? shiftYear(prevEx.general, targetYr)
-        : (targetYrStr.slice(-2) + '.04');
-    }
-
-    // 배치전: 기존 기록 없는 신규 배치자만
-    const hasPrior = G.years.some(y => emp.exams[y]?.prePlacement);
-    if (!hasPrior && emp.hazards && emp.hazards !== 'X') {
-      const hireYr = parseHireYear(emp.hireDate);
-      if (hireYr >= targetYr - 1) {
+    // 배치전: 배치전·배치후·정기특검 이력이 없는 신규 배치자만
+    const hasPriorPre      = G.years.some(y => emp.exams[y]?.prePlacement);
+    const hasPriorPost     = G.years.some(y => emp.exams[y]?.postPlacement);
+    const hasPriorPeriodic = G.years.some(y => emp.exams[y]?.periodic);
+    if (!hasPriorPre && !hasPriorPost && !hasPriorPeriodic && emp.hazards && emp.hazards !== 'X') {
+      const hireYr       = parseHireYear(emp.hireDate);
+      const targetFullYr = 2000 + targetYr;
+      if (hireYr >= targetFullYr - 1) {
         const hireM = parseHireMonth(emp.hireDate);
-        newEx.prePlacement = (targetYrStr.slice(-2)) + '.' + String(hireM).padStart(2,'0');
+        newEx.prePlacement  = targetYrStr.slice(-2) + '.' + String(hireM).padStart(2,'0');
         newEx.postPlacement = addMonths(newEx.prePlacement, 6);
       }
     }
+    // 배치후는 한 번만 실시 - 해당 연도(target)에 속하는 경우만 이월
     if (!newEx.postPlacement && prevEx.postPlacement) {
-      newEx.postPlacement = shiftYear(prevEx.postPlacement, targetYr);
+      const postYrDigits = parseInt(prevEx.postPlacement.split('.')[0]);
+      if (postYrDigits >= targetYr % 100) {
+        newEx.postPlacement = prevEx.postPlacement;
+      }
     }
 
     if ((emp.hazards && emp.hazards !== 'X') || (emp.specialItems && emp.specialItems !== 'X')) {
-      if (prevEx.periodic) {
-        newEx.periodic = shiftYear(prevEx.periodic, targetYr);
-      } else if (newEx.postPlacement) {
+      if (newEx.postPlacement) {
+        // 이번 연도에 배치후 새로 생긴 경우: 첫 정기특검은 배치후+1년 (다음 연도)
         newEx.periodic = addMonths(newEx.postPlacement, 12);
+      } else if (prevEx.periodic) {
+        // 정기특검 이력 있으면 매년 동월 반복
+        newEx.periodic = shiftYear(prevEx.periodic, targetYr);
+      } else if (prevEx.postPlacement) {
+        // 배치후 이력만 있고 정기특검 아직 없는 첫 해: 배치후+1년
+        newEx.periodic = addMonths(prevEx.postPlacement, 12);
       } else {
         newEx.periodic = targetYrStr.slice(-2) + '.04';
       }
+    }
+
+    // 일반검진: 해당 연도 특수검진 중 가장 이른 날짜와 통일
+    // (특수검진 없으면 전년도 동월 기준, 없으면 4월 기본값)
+    if (emp.generalTarget || prevEx.general) {
+      const yrPrefix = targetYrStr.slice(-2) + '.';
+      const specialThisYr = [newEx.prePlacement, newEx.postPlacement, newEx.periodic]
+        .filter(d => d && d.startsWith(yrPrefix))
+        .sort();
+      newEx.general = specialThisYr.length > 0
+        ? specialThisYr[0]
+        : (prevEx.general ? shiftYear(prevEx.general, targetYr) : targetYrStr.slice(-2) + '.04');
     }
 
     results.push({ ...emp, exams: { ...emp.exams, [targetYrStr.slice(-2)]: newEx } });
@@ -1932,8 +2097,8 @@ function renderReport() {
         const s = getExamStatus(ex.postPlacement);
         if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '배치후검진', ym: ex.postPlacement });
       }
-      // 정기특검
-      if (hasSpecial) {
+      // 정기특검 (배치후가 있는 연도는 정기특검이 배치후+1년이므로 미입력 제외)
+      if (hasSpecial && !ex.postPlacement) {
         const s = getExamStatus(ex.periodic);
         if (!ex.periodic) pendingItems.push({ type: '정기특검', ym: '미입력' });
         else if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '정기특검', ym: ex.periodic });
@@ -1962,7 +2127,7 @@ function renderReport() {
     if (getEmpOverallStatus(emp) === 'done') depts[d].done++;
   });
   document.getElementById('report-dept-bars').innerHTML = Object.entries(depts)
-    .sort((a,b) => a[0].localeCompare(b[0], 'ko'))
+    .sort((a,b) => { const d = deptSortIdx(a[0]) - deptSortIdx(b[0]); return d !== 0 ? d : a[0].localeCompare(b[0],'ko'); })
     .map(([name, v]) => {
       const pct = v.total ? Math.round(v.done/v.total*100) : 0;
       return `<div class="dept-row">
@@ -1994,9 +2159,16 @@ function renderReport() {
 }
 
 function exportReport() {
+  const yr = document.getElementById('report-year').value;
+  const dept = document.getElementById('report-dept').value;
+  const targetYears = yr === 'all' ? G.years : [yr];
   const overdueRows = [['사번','성명','부서','직군','미수검 항목','예정일','연도']];
-  G.employees.filter(e => !e.status || e.status === 'active').forEach(emp => {
-    G.years.forEach(y => {
+  G.employees.filter(e => {
+    if (e.status && e.status !== 'active') return false;
+    if (dept && e.dept !== dept) return false;
+    return true;
+  }).forEach(emp => {
+    targetYears.forEach(y => {
       const ex = emp.exams[y] || {};
       const hasSpecial = (emp.specialItems && emp.specialItems !== 'X') || (emp.hazards && emp.hazards !== 'X');
       const pending = [];
@@ -2007,7 +2179,7 @@ function exportReport() {
       }
       if (ex.prePlacement) { const s = getExamStatus(ex.prePlacement); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치전검진', ym: ex.prePlacement }); }
       if (ex.postPlacement) { const s = getExamStatus(ex.postPlacement); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치후검진', ym: ex.postPlacement }); }
-      if (hasSpecial) {
+      if (hasSpecial && !ex.postPlacement) {
         const s = getExamStatus(ex.periodic);
         if (!ex.periodic) pending.push({ type: '정기특검', ym: '미입력' });
         else if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '정기특검', ym: ex.periodic });
@@ -2028,18 +2200,53 @@ function exportReport() {
 }
 
 function exportEmployeeList() {
-  const rows = [['사번','성명','부서','직군','직무','유해인자','야간','일반검진','정기특검','상태']];
-  const yr = G.years[G.years.length-1];
-  G.employees.forEach(emp => {
+  // 화면에 표시된 필터 조건 그대로 적용
+  const q      = document.getElementById('emp-search').value.toLowerCase();
+  const dept   = document.getElementById('filter-dept').value;
+  const status = document.getElementById('filter-status').value;
+  const isResigned = currentEmpTab === 'resigned';
+  const isLeave    = currentEmpTab === 'leave';
+  const isSpecial  = isResigned || isLeave;
+
+  const filtered = G.employees.filter(emp => {
+    const s = emp.status || 'active';
+    if (currentEmpTab === 'active'   && s !== 'active')   return false;
+    if (currentEmpTab === 'leave'    && s !== 'leave')     return false;
+    if (currentEmpTab === 'resigned' && s !== 'resigned')  return false;
+    if (q && !emp.name.toLowerCase().includes(q) && !(emp.id||'').toLowerCase().includes(q)) return false;
+    if (dept && emp.dept !== dept) return false;
+    if (!isSpecial && status) {
+      if (status === 'new-hire') {
+        const hireDate = emp.hireDate ? new Date(emp.hireDate) : null;
+        if (!hireDate || isNaN(hireDate)) return false;
+        if ((TODAY - hireDate) / (1000 * 60 * 60 * 24 * 30) > 12) return false;
+      } else if (status === 'placement') {
+        const hasPlacement = G.years.some(y => emp.exams?.[y]?.prePlacement || emp.exams?.[y]?.postPlacement);
+        if (!hasPlacement) return false;
+      } else {
+        const os = getEmpOverallStatus(emp);
+        if (status === 'urgent' && os !== 'overdue' && os !== 'upcoming') return false;
+        if (status !== 'urgent' && os !== status) return false;
+      }
+    }
+    return true;
+  });
+
+  const filterYearSel = document.getElementById('filter-year');
+  const yr = (filterYearSel && filterYearSel.value) || G.years[G.years.length-1];
+
+  const rows = [['사번','성명','부서','직군','직무','유해인자','야간','일반검진','배치전','배치후','정기특검','상태']];
+  filtered.forEach(emp => {
     const ex = emp.exams[yr] || {};
     rows.push([emp.id, emp.name, emp.dept, emp.jobType, emp.jobTask, emp.hazards,
-      emp.isNight?'O':'X', ex.general||'', ex.periodic||'', getEmpOverallStatus(emp)]);
+      emp.isNight?'O':'X', ex.general||'', ex.prePlacement||'', ex.postPlacement||'', ex.periodic||'',
+      getEmpOverallStatus(emp)]);
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '직원목록');
   XLSX.writeFile(wb, `직원_건강검진현황_${new Date().toISOString().slice(0,10)}.xlsx`);
-  showToast('직원 목록이 다운로드되었습니다.');
+  showToast(`${filtered.length}명 목록이 다운로드되었습니다.`);
 }
 
 // ══════════════════════════════════════════════════════════
