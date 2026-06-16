@@ -294,6 +294,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:var
   </nav>
   <div id="header-actions">
     <span id="last-saved-tag" style="font-size:.75rem;opacity:.6;display:none"></span>
+    <button id="btn-backup" onclick="exportBackup()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.88);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:inherit;transition:.15s">💾 백업 저장</button>
     <button id="btn-upload-new" onclick="resetApp()">📂 파일 교체</button>
   </div>
 </header>
@@ -361,6 +362,13 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:var
       </div>
     </div>
 
+    <div style="display:flex;align-items:center;gap:12px;margin-top:16px;margin-bottom:4px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:.78rem;color:var(--text-sub);white-space:nowrap">또는 이전 백업에서 불러오기</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <button class="sample-btn" onclick="document.getElementById('backup-input').click()" style="width:100%;margin-bottom:8px">📂 JSON 백업 파일 불러오기</button>
+    <input type="file" id="backup-input" accept=".json" style="display:none" onchange="importBackup(event)">
     <div class="privacy-note">🔒 모든 데이터는 이 브라우저에만 저장됩니다. 서버로 전송되지 않습니다.</div>
     <button class="sample-btn" onclick="loadSampleData()">샘플 데이터로 먼저 체험해보기</button>
     <div id="upload-error" style="margin-top:14px;color:var(--danger);font-size:.85rem;display:none"></div>
@@ -979,6 +987,47 @@ function clearSavedData() {
   localStorage.removeItem(LS_KEY);
   document.getElementById('saved-data-banner').style.display = 'none';
   showToast('데이터가 삭제되었습니다.');
+}
+
+function exportBackup() {
+  const payload = {
+    version: 1,
+    companyName: G.companyName,
+    employees: G.employees,
+    years: G.years,
+    savedAt: new Date().toISOString().slice(0, 10)
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `건강검진_백업_${G.companyName || '데이터'}_${payload.savedAt}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('백업 파일이 저장됐습니다.');
+}
+
+function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d.employees || !Array.isArray(d.employees)) {
+        showError('올바른 백업 파일이 아닙니다. 이 앱에서 저장한 JSON 파일을 사용해주세요.'); return;
+      }
+      G.employees   = d.employees;
+      G.companyName = d.companyName || '';
+      G.years       = d.years || [];
+      initApp();
+      showToast(`백업 데이터를 불러왔습니다. (${G.employees.length}명)`);
+    } catch {
+      showError('백업 파일을 읽을 수 없습니다. 파일이 손상됐을 수 있습니다.');
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
 }
 
 // ══════════════════════════════════════════════════════════
