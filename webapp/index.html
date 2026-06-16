@@ -379,14 +379,14 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;background:var
         <div class="sc-sub">등록된 임직원</div>
       </div>
       <div class="summary-card danger">
-        <div class="sc-label">🔴 누락 / 초과</div>
+        <div class="sc-label">🔴 누락 / 미수검</div>
         <div class="sc-value" id="sc-overdue">0</div>
-        <div class="sc-sub">즉시 조치 필요</div>
+        <div class="sc-sub" id="sc-overdue-sub">즉시 조치 필요</div>
       </div>
       <div class="summary-card warn">
-        <div class="sc-label">🟠 임박 (30일 이내)</div>
+        <div class="sc-label">🟠 이 중 임박 (30일 이내)</div>
         <div class="sc-value" id="sc-upcoming">0</div>
-        <div class="sc-sub">이번달 예정</div>
+        <div class="sc-sub">누락 중 임박 건수</div>
       </div>
       <div class="summary-card success">
         <div class="sc-label">✅ 완료율</div>
@@ -1064,7 +1064,7 @@ function populateYearSelectors() {
 }
 
 // 부서 커스텀 정렬 순서 (키워드 포함 여부로 매칭)
-const DEPT_ORDER_KEYS = ['생산1','생산2','업무','품질','설비','안전보건환경','생산3','3공장','비상계획'];
+const DEPT_ORDER_KEYS = ['익산2공장','생산1','생산2','생산3','업무','설비','품질안전','품질','안전보건환경','비상계획'];
 function deptSortIdx(dept) {
   if (!dept) return 999;
   const d = dept.replace(/\s/g, '');
@@ -1116,31 +1116,39 @@ function getDaysOverdue(ym) {
 }
 
 function getEmpOverallStatus(emp) {
-  // 당해연도 기준으로 판단 (27년 컬럼 있어도 올해=26년 체크)
+  // 리포트와 동일한 기준으로 판단 (당해연도 기준)
   const curYr = String(CUR_YEAR).padStart(2, '0');
   const targetYear = G.years.includes(curYr) ? curYr : G.years[G.years.length - 1];
   if (!targetYear) return 'none';
   const ex = emp.exams[targetYear] || {};
-  const statuses = [ex.general, ex.periodic].filter(Boolean).map(getExamStatus);
-
-  // 유해인자 있는데 정기특검 미입력 체크
   const hasHazards = emp.hazards && emp.hazards !== 'X';
-  if (hasHazards && !ex.periodic) {
-    // 이번 연도 배치후 날짜 있으면 → 정기특검은 배치후+1년(내년)이므로 패스
-    if (!ex.postPlacement) {
-      // 이전 연도 정기특검 이력 있으면 올해도 있어야 함
-      const hadPriorPeriodic = G.years.some(y => y < targetYear && emp.exams[y]?.periodic);
-      if (hadPriorPeriodic) statuses.push('upcoming');
-    }
+  const statuses = [];
+
+  // 일반검진: 대상자인데 날짜 없으면 overdue
+  if (emp.generalTarget) {
+    statuses.push(ex.general ? getExamStatus(ex.general) : 'overdue');
   }
 
-  // 필수 검진이 하나도 입력 안 된 경우 → 공허한 참(vacuous true) 방지
-  const needsAnyExam = (emp.generalTarget !== false) || hasHazards;
-  if (needsAnyExam && statuses.length === 0) return 'overdue';
+  // 배치전검진: 날짜 있으면 상태 체크
+  if (ex.prePlacement) {
+    statuses.push(getExamStatus(ex.prePlacement));
+  }
 
-  if (statuses.includes('overdue')) return 'overdue';
+  // 배치후검진: 날짜 있으면 상태 체크 (리포트와 동일)
+  if (ex.postPlacement) {
+    statuses.push(getExamStatus(ex.postPlacement));
+  }
+
+  // 정기특검: 유해인자 있고 이 연도 배치후 없으면 체크 (리포트와 동일)
+  if (hasHazards && !ex.postPlacement) {
+    statuses.push(ex.periodic ? getExamStatus(ex.periodic) : 'overdue');
+  }
+
+  if (statuses.length === 0) return 'none';
+  // scheduled(미래 예정)도 아직 미수검이므로 누락으로 처리 — 리포트와 동일 기준
+  if (statuses.includes('overdue') || statuses.includes('scheduled')) return 'overdue';
   if (statuses.includes('upcoming')) return 'upcoming';
-  if (statuses.every(s => s === 'done' || s === 'scheduled')) return 'done';
+  if (statuses.every(s => s === 'done')) return 'done';
   return 'none';
 }
 
@@ -1175,8 +1183,10 @@ function renderDashboard() {
   const total = activeEmployees.length;
   const rate = total ? Math.round((done / total) * 100) : 0;
 
+  const totalMissing = overdue + upcoming;
   document.getElementById('sc-total').textContent = total;
-  document.getElementById('sc-overdue').textContent = overdue;
+  document.getElementById('sc-overdue').textContent = totalMissing;
+  document.getElementById('sc-overdue-sub').textContent = upcoming > 0 ? `이 중 임박 ${upcoming}건 포함` : '즉시 조치 필요';
   document.getElementById('sc-upcoming').textContent = upcoming;
   document.getElementById('sc-rate').textContent = rate + '%';
   document.getElementById('sc-done-count').textContent = done + '명 완료';
@@ -1184,16 +1194,16 @@ function renderDashboard() {
   // 알림 배너
   const alertArea = document.getElementById('alert-area');
   alertArea.innerHTML = '';
-  if (overdue > 0) alertArea.innerHTML += `
+  if (totalMissing > 0) alertArea.innerHTML += `
     <div class="alert-banner danger" onclick="showPage('employees');filterStatus('overdue')">
-      <div class="ab-left">🚨 검진 기한이 초과된 직원이 있습니다
-        <span class="ab-count">${overdue}명</span>
+      <div class="ab-left">🚨 미실시 검진이 있는 직원이 있습니다
+        <span class="ab-count">${totalMissing}명</span>
       </div>
       <span class="ab-arrow">목록 보기 →</span>
     </div>`;
   if (upcoming > 0) alertArea.innerHTML += `
     <div class="alert-banner warn" onclick="showPage('employees');filterStatus('upcoming')">
-      <div class="ab-left">⚠️ 30일 이내 검진 예정자가 있습니다
+      <div class="ab-left">⚠️ 이 중 30일 이내 임박한 직원이 있습니다
         <span class="ab-count">${upcoming}명</span>
       </div>
       <span class="ab-arrow">목록 보기 →</span>
@@ -1208,13 +1218,23 @@ function renderDashboard() {
     const dispYear = G.years.includes(curYrStr) ? curYrStr : latestYear;
     const rows = urgentList.slice(0, 10).map(({emp, status}) => {
       const ex = emp.exams[dispYear] || {};
-      // 미수검 항목 판별
-      const missingItems = [];
-      if (emp.generalTarget !== false && !ex.general) missingItems.push('일반검진');
       const hasHazards = emp.hazards && emp.hazards !== 'X';
-      if (hasHazards && !ex.periodic) missingItems.push('정기특검');
-      if (ex.prePlacement && getExamStatus(ex.prePlacement) === 'done' && !ex.postPlacement) missingItems.push('배치후');
-      const examType = missingItems.length ? missingItems.join(', ') + ' 미입력' : '검진 임박';
+      // 미수검 항목 판별 — 날짜 있으면 "XX년 X월 예정", 없으면 "미입력"
+      const fmtExam = (label, ym) => {
+        if (!ym) return label + ' 미입력';
+        const [yy, mm] = ym.split('.');
+        return `${label} ${yy}년${parseInt(mm)}월예정`;
+      };
+      const missingItems = [];
+      if (emp.generalTarget && (!ex.general || getExamStatus(ex.general) !== 'done'))
+        missingItems.push(fmtExam('일반검진', ex.general));
+      if (ex.prePlacement && getExamStatus(ex.prePlacement) !== 'done')
+        missingItems.push(fmtExam('배치전검진', ex.prePlacement));
+      if (ex.postPlacement && getExamStatus(ex.postPlacement) !== 'done')
+        missingItems.push(fmtExam('배치후검진', ex.postPlacement));
+      if (hasHazards && !ex.postPlacement && (!ex.periodic || getExamStatus(ex.periodic) !== 'done'))
+        missingItems.push(fmtExam('정기특검', ex.periodic));
+      const examType = missingItems.length ? missingItems.join(' · ') : '미실시';
       // D-day: 가장 임박한 날짜 기준
       const nearestDate = [ex.general, ex.postPlacement, ex.periodic]
         .filter(d => d && getExamStatus(d) !== 'done')
