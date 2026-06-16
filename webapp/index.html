@@ -931,15 +931,17 @@ function detectColumns(header, subHeader) {
 function showColMapResult(colMap, empCount) {
   const box = document.getElementById('col-mapper');
   const chk = (v) => v !== null && v !== undefined ? '✅' : '⬜';
-  const yearInfo = Object.entries(colMap.examCols || {}).map(([yr, cols]) => {
-    const parts = [
-      cols.general  !== null ? '일반' : null,
-      cols.pre      !== null ? '배치전' : null,
-      cols.post     !== null ? '배치후' : null,
-      cols.periodic !== null ? '정기특검' : null
-    ].filter(Boolean);
-    return `<span style="background:var(--primary);color:#fff;border-radius:4px;padding:2px 8px;font-size:.78rem;font-weight:700">20${yr}년</span> ${parts.join('·') || '인식 안 됨'}`;
-  }).join('  ');
+  const examEntries = Object.entries(colMap.examCols || {});
+  const years = examEntries.map(([yr]) => `20${yr}`).join(' · ');
+  const typeSet = new Set();
+  examEntries.forEach(([, cols]) => {
+    if (cols.general  !== null) typeSet.add('일반');
+    if (cols.pre      !== null) typeSet.add('배치전');
+    if (cols.post     !== null) typeSet.add('배치후');
+    if (cols.periodic !== null) typeSet.add('정기특검');
+  });
+  const types = [...typeSet].join(' · ') || '인식 안 됨';
+  const yearInfo = examEntries.length ? `연도: ${years} &nbsp;|&nbsp; 항목: ${types}` : '';
 
   const warns = [];
   if (colMap.generalTarget === null) warns.push('⚠️ 일반검진대상 컬럼 없음 → 전원 대상자로 처리');
@@ -961,7 +963,7 @@ function showColMapResult(colMap, empCount) {
       <div>${chk(colMap.isNight)} 야간근무</div>
       <div>${chk(colMap.empStatus)} 재직상태</div>
     </div>
-    ${yearInfo ? `<div style="font-size:.82rem;margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><strong>검진연도:</strong> ${yearInfo}</div>` : ''}
+    ${yearInfo ? `<div style="font-size:.82rem;margin-bottom:10px;color:#555">${yearInfo}</div>` : ''}
     ${warns.length ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:.8rem;color:#78350f;margin-bottom:12px">${warns.join('<br>')}</div>` : ''}
     <button class="btn-primary" onclick="document.getElementById('col-mapper').style.display='none';initApp()">확인 · 대시보드로 이동 →</button>`;
 }
