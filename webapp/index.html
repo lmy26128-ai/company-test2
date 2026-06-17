@@ -1195,14 +1195,21 @@ function ymToDate(ym) {
   return new Date(fullY, m - 1, 28); // 월 말일 기준
 }
 
-function getExamStatus(ym) {
+function getExamStatus(ym, confirmed) {
   if (!ym) return 'none';
+  if (confirmed) return 'done'; // "수검 완료 입력"으로 직접 확정한 항목은 날짜 계산과 무관하게 완료
   const d = ymToDate(ym);
   if (!d) return 'none';
   const diff = Math.floor((d - TODAY) / 86400000);
   if (diff < 0) return 'done';      // 과거 날짜 = 수검 완료로 간주
   if (diff <= 30) return 'upcoming';
   return 'scheduled';
+}
+
+// ex 객체와 항목 키로 confirmed 플래그까지 함께 조회
+function examStatusOf(ex, key) {
+  if (!ex) return 'none';
+  return getExamStatus(ex[key], ex.confirmed && ex.confirmed[key]);
 }
 
 function getDaysOverdue(ym) {
@@ -1222,22 +1229,22 @@ function getEmpOverallStatus(emp) {
 
   // 일반검진: 대상자인데 날짜 없으면 overdue
   if (emp.generalTarget) {
-    statuses.push(ex.general ? getExamStatus(ex.general) : 'overdue');
+    statuses.push(ex.general ? examStatusOf(ex, 'general') : 'overdue');
   }
 
   // 배치전검진: 날짜 있으면 상태 체크
   if (ex.prePlacement) {
-    statuses.push(getExamStatus(ex.prePlacement));
+    statuses.push(examStatusOf(ex, 'prePlacement'));
   }
 
   // 배치후검진: 날짜 있으면 상태 체크 (리포트와 동일)
   if (ex.postPlacement) {
-    statuses.push(getExamStatus(ex.postPlacement));
+    statuses.push(examStatusOf(ex, 'postPlacement'));
   }
 
   // 정기특검: 유해인자 있고 이 연도 배치후 없으면 체크 (리포트와 동일)
   if (hasHazards && !ex.postPlacement) {
-    statuses.push(ex.periodic ? getExamStatus(ex.periodic) : 'overdue');
+    statuses.push(ex.periodic ? examStatusOf(ex, 'periodic') : 'overdue');
   }
 
   if (statuses.length === 0) return 'none';
@@ -1322,19 +1329,19 @@ function renderDashboard() {
         return `${label} ${yy}년${parseInt(mm)}월예정`;
       };
       const missingItems = [];
-      if (emp.generalTarget && (!ex.general || getExamStatus(ex.general) !== 'done'))
+      if (emp.generalTarget && (!ex.general || examStatusOf(ex, 'general') !== 'done'))
         missingItems.push(fmtExam('일반검진', ex.general));
-      if (ex.prePlacement && getExamStatus(ex.prePlacement) !== 'done')
+      if (ex.prePlacement && examStatusOf(ex, 'prePlacement') !== 'done')
         missingItems.push(fmtExam('배치전검진', ex.prePlacement));
-      if (ex.postPlacement && getExamStatus(ex.postPlacement) !== 'done')
+      if (ex.postPlacement && examStatusOf(ex, 'postPlacement') !== 'done')
         missingItems.push(fmtExam('배치후검진', ex.postPlacement));
-      if (hasHazards && !ex.postPlacement && (!ex.periodic || getExamStatus(ex.periodic) !== 'done'))
+      if (hasHazards && !ex.postPlacement && (!ex.periodic || examStatusOf(ex, 'periodic') !== 'done'))
         missingItems.push(fmtExam('정기특검', ex.periodic));
       const examType = missingItems.length ? missingItems.join(' · ') : '미실시';
       // D-day: 가장 임박한 날짜 기준
-      const nearestDate = [ex.general, ex.postPlacement, ex.periodic]
-        .filter(d => d && getExamStatus(d) !== 'done')
-        .map(d => ymToDate(d)).filter(Boolean)
+      const nearestDate = [['general',ex.general],['postPlacement',ex.postPlacement],['periodic',ex.periodic]]
+        .filter(([k,d]) => d && examStatusOf(ex, k) !== 'done')
+        .map(([k,d]) => ymToDate(d)).filter(Boolean)
         .sort((a, b) => a - b)[0];
       const days = nearestDate
         ? `D-${Math.ceil((nearestDate - TODAY) / 86400000)}`
@@ -1556,10 +1563,10 @@ function renderEmployeeList() {
     }
 
     const ex = emp.exams[latestYear] || {};
-    const gStatus  = getExamStatus(ex.general);
-    const preStatus = getExamStatus(ex.prePlacement);
-    const postStatus = getExamStatus(ex.postPlacement);
-    const pStatus  = getExamStatus(ex.periodic);
+    const gStatus  = examStatusOf(ex, 'general');
+    const preStatus = examStatusOf(ex, 'prePlacement');
+    const postStatus = examStatusOf(ex, 'postPlacement');
+    const pStatus  = examStatusOf(ex, 'periodic');
     const overall = getEmpOverallStatus(emp);
     return `<tr onclick="openEmpModal('${clickId}')">
       ${chkTd}
@@ -1671,10 +1678,10 @@ function openEmpModal(id) {
     const periodicMissing = !ex.periodic && hasHazards && !ex.postPlacement && isPastOrCurrent;
     return `<tr>
       <td><span class="year-badge ${isCurrent?'current':''}">${yr}년</span></td>
-      <td>${generalMissing ? cellDisplay('미입력', 'overdue') : cellDisplay(ex.general, getExamStatus(ex.general))}</td>
-      <td>${cellDisplay(ex.prePlacement, getExamStatus(ex.prePlacement))}</td>
-      <td>${cellDisplay(ex.postPlacement, getExamStatus(ex.postPlacement))}</td>
-      <td>${periodicMissing ? cellDisplay('미입력', 'overdue') : cellDisplay(ex.periodic, getExamStatus(ex.periodic))}</td>
+      <td>${generalMissing ? cellDisplay('미입력', 'overdue') : cellDisplay(ex.general, examStatusOf(ex, 'general'))}</td>
+      <td>${cellDisplay(ex.prePlacement, examStatusOf(ex, 'prePlacement'))}</td>
+      <td>${cellDisplay(ex.postPlacement, examStatusOf(ex, 'postPlacement'))}</td>
+      <td>${periodicMissing ? cellDisplay('미입력', 'overdue') : cellDisplay(ex.periodic, examStatusOf(ex, 'periodic'))}</td>
     </tr>`;
   }).join('');
 
@@ -1773,6 +1780,8 @@ function saveExamEntry() {
 
   if (!emp.exams[yr]) emp.exams[yr] = { general:'', prePlacement:'', postPlacement:'', periodic:'' };
   emp.exams[yr][_selectedExamType] = dateVal;
+  if (!emp.exams[yr].confirmed) emp.exams[yr].confirmed = {};
+  emp.exams[yr].confirmed[_selectedExamType] = true;
 
   // years 목록에 없으면 추가
   if (!G.years.includes(yr)) { G.years.push(yr); G.years.sort(); }
@@ -1930,12 +1939,19 @@ function saveEmpForm() {
 
   const exams = {};
   _formYears.forEach(yr => {
-    exams[yr] = {
+    const prevEx = _formEmp?.exams?.[yr] || {};
+    const newVals = {
       general:       document.getElementById(`fe-${yr}-general`)?.value.trim()  || '',
       prePlacement:  document.getElementById(`fe-${yr}-pre`)?.value.trim()      || '',
       postPlacement: document.getElementById(`fe-${yr}-post`)?.value.trim()     || '',
       periodic:      document.getElementById(`fe-${yr}-periodic`)?.value.trim() || ''
     };
+    // 값이 그대로면 기존 "수검 완료" 확정 플래그 유지, 값을 바꾼 항목은 플래그 초기화(직접 수정 시 날짜 기준으로 재판정)
+    const confirmed = {};
+    Object.keys(newVals).forEach(k => {
+      if (newVals[k] && newVals[k] === prevEx[k] && prevEx.confirmed?.[k]) confirmed[k] = true;
+    });
+    exams[yr] = { ...newVals, confirmed };
     // 새 연도는 G.years에 추가
     if (!G.years.includes(yr)) { G.years.push(yr); G.years.sort(); }
   });
@@ -1973,28 +1989,32 @@ function saveEmpForm() {
 
 function resignEmployee() {
   const rawName = document.getElementById('modal-name').textContent.replace(' (퇴사)','').replace(' (휴직)','');
-  if (!confirm(`${rawName} 직원을 퇴사 처리할까요?\n퇴사일은 나중에 수정 버튼으로 입력할 수 있습니다.`)) return;
   const emp = G.employees.find(e => e.id === _editingId || e.name === rawName);
   if (!emp) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const input = prompt(`${rawName} 직원의 퇴사일을 입력하세요. (YYYY-MM-DD)`, emp.resignDate || today);
+  if (input === null) return;
   emp.status = 'resigned';
-  emp.resignDate = emp.resignDate || '';
+  emp.resignDate = input.trim();
   saveToLocal();
   closeEmpModal();
   switchEmpTab('resigned');
-  showToast(`${rawName} 직원이 퇴사 처리됐습니다. 퇴사일은 수정에서 입력하세요.`);
+  showToast(`${rawName} 직원이 퇴사 처리됐습니다.`);
 }
 
 function leaveEmployee() {
   const rawName = document.getElementById('modal-name').textContent.replace(' (퇴사)','').replace(' (휴직)','');
-  if (!confirm(`${rawName} 직원을 휴직 처리할까요?\n휴직일은 나중에 수정 버튼으로 입력할 수 있습니다.`)) return;
   const emp = G.employees.find(e => e.id === _editingId || e.name === rawName);
   if (!emp) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const input = prompt(`${rawName} 직원의 휴직일을 입력하세요. (YYYY-MM-DD)`, emp.leaveDate || today);
+  if (input === null) return;
   emp.status = 'leave';
-  emp.leaveDate = emp.leaveDate || '';
+  emp.leaveDate = input.trim();
   saveToLocal();
   closeEmpModal();
   switchEmpTab('leave');
-  showToast(`${rawName} 직원이 휴직 처리됐습니다. 휴직일은 수정에서 입력하세요.`);
+  showToast(`${rawName} 직원이 휴직 처리됐습니다.`);
 }
 
 function reinstateEmployee() {
@@ -2193,9 +2213,9 @@ function renderReport() {
       const hasSpecial = (emp.hazards && emp.hazards !== 'X') || (emp.specialItems && emp.specialItems !== 'X');
 
       // 완료율 집계 (날짜 있는 항목만)
-      [ex.general, ex.prePlacement, ex.postPlacement, ex.periodic].filter(Boolean).forEach(ym => {
+      [['general',ex.general],['prePlacement',ex.prePlacement],['postPlacement',ex.postPlacement],['periodic',ex.periodic]].filter(([,v]) => v).forEach(([k]) => {
         totalExams++;
-        if (getExamStatus(ym) === 'done') doneExams++;
+        if (examStatusOf(ex, k) === 'done') doneExams++;
       });
 
       // 미수검 항목 수집: 날짜 없는 대상자 OR 미래 예정(아직 미수검)
@@ -2203,23 +2223,23 @@ function renderReport() {
 
       // 일반검진
       if (emp.generalTarget) {
-        const s = getExamStatus(ex.general);
+        const s = examStatusOf(ex, 'general');
         if (!ex.general) pendingItems.push({ type: '일반검진', ym: '미입력' });
         else if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '일반검진', ym: ex.general });
       }
       // 배치전
       if (ex.prePlacement) {
-        const s = getExamStatus(ex.prePlacement);
+        const s = examStatusOf(ex, 'prePlacement');
         if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '배치전검진', ym: ex.prePlacement });
       }
       // 배치후
       if (ex.postPlacement) {
-        const s = getExamStatus(ex.postPlacement);
+        const s = examStatusOf(ex, 'postPlacement');
         if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '배치후검진', ym: ex.postPlacement });
       }
       // 정기특검 (배치후가 있는 연도는 정기특검이 배치후+1년이므로 미입력 제외)
       if (hasSpecial && !ex.postPlacement) {
-        const s = getExamStatus(ex.periodic);
+        const s = examStatusOf(ex, 'periodic');
         if (!ex.periodic) pendingItems.push({ type: '정기특검', ym: '미입력' });
         else if (s === 'upcoming' || s === 'scheduled') pendingItems.push({ type: '정기특검', ym: ex.periodic });
       }
@@ -2293,14 +2313,14 @@ function exportReport() {
       const hasSpecial = (emp.specialItems && emp.specialItems !== 'X') || (emp.hazards && emp.hazards !== 'X');
       const pending = [];
       if (emp.generalTarget) {
-        const s = getExamStatus(ex.general);
+        const s = examStatusOf(ex, 'general');
         if (!ex.general) pending.push({ type: '일반검진', ym: '미입력' });
         else if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '일반검진', ym: ex.general });
       }
-      if (ex.prePlacement) { const s = getExamStatus(ex.prePlacement); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치전검진', ym: ex.prePlacement }); }
-      if (ex.postPlacement) { const s = getExamStatus(ex.postPlacement); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치후검진', ym: ex.postPlacement }); }
+      if (ex.prePlacement) { const s = examStatusOf(ex, 'prePlacement'); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치전검진', ym: ex.prePlacement }); }
+      if (ex.postPlacement) { const s = examStatusOf(ex, 'postPlacement'); if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '배치후검진', ym: ex.postPlacement }); }
       if (hasSpecial && !ex.postPlacement) {
-        const s = getExamStatus(ex.periodic);
+        const s = examStatusOf(ex, 'periodic');
         if (!ex.periodic) pending.push({ type: '정기특검', ym: '미입력' });
         else if (s === 'upcoming' || s === 'scheduled') pending.push({ type: '정기특검', ym: ex.periodic });
       }
